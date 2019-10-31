@@ -1,0 +1,2375 @@
+define(['jquery',"lodash", 'beneformCore', 'beneformLog', 'beneformLang', 'blockUI', 'charset', 'datatype', 'getValueByForm', 'messageRemind', 'validationActionManager', 'validationMessageManager', 'validationStateCodeCollection', 'validation', 'headerModule', 'igtbCommon', 'overlayModule'],
+	function($,_, Beneform, beneformLog, beneformLang, blockUI, charset, datatype, getValueByForm, messageRemind, validationActionManager, validationMessageManager, validationStateCodeCollection, validation, headerModule, igtbCommon, overlay) {
+		function html2Escape(sHtml) {
+			return beneform.escape(sHtml);
+		}
+		function html2Unescape(sHtml) {
+			return beneform.unescape(sHtml);
+		}
+		
+		function traveObj(obj,callback) {
+			if(!callback)callback = function(){}
+			function isLeaf(v) {
+				var flag = true;
+				if (beneform.isString(v)) {
+					return flag;
+				} else if (beneform.isArray(v)) {
+					if (v.length != 0) {
+						flag = false;
+					}
+				} else {
+					flag = false;
+				}
+				return flag;
+			}
+
+			function traverseObj(obj, callback) {
+				var _callback = callback;
+
+				if (beneform.isArray(obj)) {
+					obj.forEach(function(value, index, arr) {
+						if (isLeaf(value)) {
+							if(beneform.isString(value))obj[index] = callback.call(beneform,obj[index],index);
+						} else {
+							traverseObj(value, _callback);
+						}
+					});
+				}
+				else {
+					for (var index in obj) {
+						var value = obj[index];
+						if (isLeaf(value)) {
+							if(beneform.isString(value))obj[index] = callback.call(beneform,obj[index],index);
+						} else {
+							traverseObj(value, _callback);
+						}
+					}
+				}
+			}
+			traverseObj(obj,callback);
+			return obj;
+		}
+		var beneform = new Beneform();
+		beneform.pluginsInitPool.language = beneformLang;
+		beneform.pluginsInitPool.progressIndicator = blockUI;
+		beneform.pluginsInitPool.charset = charset;
+		beneform.pluginsInitPool.datatype = datatype;
+		beneform.pluginsInitPool.getValueByForm = getValueByForm;
+		beneform.pluginsInitPool.messageRemind = messageRemind;
+		beneform.pluginsInitPool.validationActionManager = validationActionManager;
+		beneform.pluginsInitPool.validationMessageManager = validationMessageManager;
+		beneform.pluginsInitPool.validationStateCodeCollection = validationStateCodeCollection;
+		beneform.pluginsInitPool.validation = validation;
+		beneform.setSystemConfig({
+		});
+		beneform.setAddServerEnvironmentFunction(function() {
+			var core = beneform.core;
+			beneform.register("extendLangJson", function() {
+				var langJson = beneform.GET_MODULE()["lang_" + beneform.LANGUAGE.langFlag];
+				var _langJson = JSON.parse(beneform.LANGUAGE.langJson);
+				_langJson = beneform.extend(true, {}, _langJson, langJson);
+				beneform.LANGUAGE.langJson = JSON.stringify(_langJson);
+			});
+			beneform.register("findLangLabel", beneform.resolve("extendLangJson,", function(extendLangJson, newForms) {
+				beneform.GET_MODULE()["lang_" + beneform.LANGUAGE.langFlag] = {};
+				var names = {};
+
+				var _forms = beneform.GET_MODULE().registerForms();
+				if(newForms) {
+
+					if(_forms.length == 0) {
+						_forms = newForms;
+					} else {
+						_forms.forEach(function(_form, index) {
+							var _formId = _form.formId;
+							newForms.forEach(function(newForm) {
+								if(newForm.formId == _formId) {
+									_forms[index] = newForm;
+								} else {
+									_forms.push(newForm);
+								}
+							});
+						});
+					}
+				}
+
+				_forms.forEach(function(form) {
+					form.fields.forEach(function(field) {
+						if(!names[field.name]) {
+							names[field.name] = "";
+						}
+					});
+				});
+
+				$("[data-label]").each(function() {
+					var label = $(this).igtbText().replace(/\n/g, "");
+					label = $.trim(label);
+
+					var _names = $(this).igtbData("label").toString().split(",");
+					_names.forEach(function(item) {
+						if(typeof names[item] != "undefined") names[item] = label || "";
+					});
+				});
+
+				var rst = {
+					"label": names
+				}
+				beneform.GET_MODULE()["lang_" + beneform.LANGUAGE.langFlag] = $.extend(true, {}, beneform.GET_MODULE()["lang_" + beneform.LANGUAGE.langFlag], rst)
+				extendLangJson();
+			}));
+			beneform.register("generateDataModel", function(newForms) {
+				var forms = beneform.GET_MODULE().registerForms ? beneform.GET_MODULE().registerForms() : [];
+
+				if(newForms) {
+
+					if(forms.length == 0) {
+						forms = newForms;
+					} else {
+						forms.forEach(function(_form, index) {
+							var _formId = _form.formId;
+							newForms.forEach(function(newForm) {
+								if(newForm.formId == _formId) {
+									forms[index] = newForm;
+								} else {
+									forms.push(newForm);
+								}
+							});
+						});
+					}
+				}
+
+				for(var i = 0; i < forms.length; i++) {
+					var formId = forms[i].formId;
+					beneform.GET_MODULE().data[formId] = {};
+					if(forms[i].fields) {
+						for(var j = 0; j < forms[i].fields.length; j++) {
+							var name = forms[i].fields[j].name;
+							beneform.GET_MODULE().data[formId][name] = {};
+							if(forms[i].fields[j].defaultValue) beneform.GET_MODULE().data[formId][name]["value"] = forms[i].fields[j].defaultValue;
+							beneform.GET_MODULE().data[formId][name]["label"] = beneform.FIND_LANG_VALUE("label." + name);
+							beneform.GET_MODULE().data[formId][name]["name"] = name;
+							if(forms[i].fields[j].rules) {
+								if(forms[i].fields[j].rules[0].dataType) beneform.GET_MODULE().data[formId][name]["dataType"] = forms[i].fields[j].rules[0].dataType;
+							}
+						}
+						if(core.routingCore.allowToAutoTxnData) {
+							var _data = JSON.stringify(beneform.STORAGE.getItem(formId));
+							if(_data)
+								beneform.GET_MODULE().data[formId] = beneform.extend(true, {}, beneform.GET_MODULE().data[formId], JSON.parse(_data));
+						}
+					} else {
+						beneformLog.warning("The form config whose formId is " + formId + " having no any field config.", "launch", "generateDataModel");
+					}
+				}
+				core.routingCore.setAllowToAutoTxnData(false);
+			});
+			beneform.register("fixBugInIE", function() {
+				if(this.IS_IE) {
+					var backLock = true;
+					var KEYCODE_BACKSPACE = 8;
+					$(document).on('blur', 'input:not(.selectric-input),textarea', function(evt){
+						evt.stopPropagation();
+						backLock = true;
+					});
+					$(document).on('focus', 'input:not(.selectric-input),textarea', function(evt){
+						evt.stopPropagation();
+						backLock = false;
+					});
+					$(document).on('keydown',function(event) {
+						if(backLock && event.keyCode === KEYCODE_BACKSPACE) {
+							event.preventDefault();
+							return false;
+						}
+					});
+				}
+			});
+			beneform.register("initRoutingCore", beneform.resolve("provideModulesFactory,findLangLabel,extendLangJson,generateDataModel,runArtTemplate,NumberParseInt,isIE,runDateFunList,fixBugInIE,fixCursorFloatsInFooter,handlSmartcard,extendJquery",
+				function(provideModulesFactory, findLangLabel, extendLangJson, generateDataModel, runArtTemplate, NumberParseInt,isIE,runDateFunList,fixBugInIE,fixCursorFloatsInFooter,handlSmartcard,extendJquery) {
+
+					beneform.core.routingCore.initMethodMap.register(false, provideModulesFactory, [], 1000);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, isIE, [], 1100, beneform);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, handlSmartcard, [], 1080, beneform);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, fixBugInIE, [], 1090, beneform);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, findLangLabel, [], 40);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, extendLangJson, [], 30);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, generateDataModel, [], 20);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, runArtTemplate, [], 12);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, NumberParseInt, [], 10);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, runDateFunList, [], 5);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, function() {
+						return beneform.GET_MODULE().prepareData();
+					}, [], 16);
+					beneform.core.routingCore.dynamicallyLoadFileCallbackMethodMap.register(false, fixCursorFloatsInFooter, [], 4,beneform);
+				}));
+			beneform.register("runArtTemplate", function() {
+			});
+			beneform.register("NumberParseInt", function() {
+				if(!!window.ActiveXObject || "ActiveXObject" in window) {
+					Number.parseInt = function() {
+						if(typeof arguments[0]=="undefined"||typeof arguments[0]=="object"||arguments[0]==""){
+							return NaN;
+						}else{
+							var num=arguments[0].toString().split('.');
+							return num[0] - 0;
+						}
+					}
+				}
+			});
+			beneform.register("provideModulesFactory", function() {
+				var modules;
+				beneform.DATA_DESTORY = function() {};
+				beneform.STRUCTURE_MODULES = function(dataModel) {
+					if(!beneform.DATA_DESTORY) beneform.DATA_DESTORY = function() {};
+					if(!dataModel.destory) {
+						dataModel.destory = function() {}
+						beneformLog.debug("The callback which is used to run when the modules be destroyed is not found.", "router");
+					};
+					if(beneform.isFunction(dataModel.destory)) {
+						beneform.DATA_DESTORY = dataModel.destory;
+					} else {
+						beneformLog.warning(module.destory, "router", "", "", "The callback which is used to run when the modules be destroyed is not a funtion.");
+						beneform.DATA_DESTORY = function() {};
+					};
+					if(dataModel.create) {
+						if(beneform.isFunction(dataModel.create)) {
+							dataModel.create();
+						} else {
+							beneformLog.warning(module.create, "router", "", "", "The callback which is used to run when the modules be created is not a funtion.");
+						}
+					} else {
+						beneformLog.debug("The callback which is used to run when the modules be created is not found.", "router", "");
+					};
+
+					var _module = {};
+					_module[beneform.core.routingCore.currentModuleName] = dataModel;
+					modules = beneform.extend(true, {}, modules, _module);
+				};
+				beneform.RESET_MODULES = function() {
+					modules = {};
+					beneform.DATA_DESTORY();
+				};
+				beneform.GET_MODULE = function() {
+					return modules[beneform.core.routingCore.currentModuleName];
+				};
+				beneform.RESET_MODULES();
+			});
+			beneform.register("handlSmartcard",function(){
+				if(typeof OBJ == "undefined") return false;
+				if(typeof OBJ.message != "undefined" && OBJ.message["0"].code == "FE0001") {
+					if(typeof readSmartCart != "undefined"&&beneform.isFunction(readSmartCart)){
+						readSmartCart();
+						return;
+					}
+				}
+			});
+			beneform.register("isIE",function(){
+				 this.IS_IE = headerModule.isIE();
+			});
+			beneform.register("fixCursorFloatsInFooter",function(){
+				if(!this.IS_IE) return;
+				$(document).off("focusin","input:not([type='button']),textarea").on("focusin","input:not([type='button']),textarea",function (evt) {
+					if($(".containerLeft .step").length == 0) return;
+					var footerH;
+					if($(".buttonContainer")){
+						footerH = Number.parseInt($(".buttonContainer").height());
+					}
+					else {
+						footerH = 50;
+					}
+					var distance = $(window).height()-$(evt.target)[0].getBoundingClientRect().bottom;
+					if(distance<footerH) $(evt.target)[0].scrollIntoView(true);
+				})
+			})
+			beneform.register("extendJquery",function(){
+				String.prototype.unescapeLength = function(){return beneform.unescape(this.toString()).length};
+				$.fn.igtbVal = function(value){
+					if(arguments.length == 0){
+						var rst = this.val();
+						if(beneform.isArray(rst)){
+							for(var i =0;i<rst.length;i++){
+								rst[i] = beneform.escape(rst[i]);
+							}
+						}
+						else {
+							rst = beneform.escape(rst);
+						}
+						return rst;
+					}
+					if(beneform.isArray(value)){
+						for(var i =0;i<value.length;i++){
+							value[i] = beneform.unescape(value[i]);
+						}
+					}
+					else {
+						value = beneform.unescape(value);
+					}
+					
+					this.val(value);
+					return this;
+				}
+				$.fn.igtbText = function(value){
+					if(typeof value === "undefined"){
+						var rst = this.text();
+						return beneform.escape(rst);
+					}
+					
+					value = _.unescape(value);
+					this.text(value);
+					return this;
+				}
+				$.fn.igtbData = function(){
+					if(arguments.length==0){
+						var _rst = this.data.apply(this,arguments);
+						_rst = traveObj(_rst,beneform.escape);
+						return _rst;
+					}
+					else if(arguments.length==1){
+						var _rst = this.data.apply(this,arguments);
+						_rst = beneform.escape(_rst);
+						return _rst;
+					}
+					else if(arguments.length==2){
+						var args2 = arguments[1];
+						args2 = beneform.unescape(args2);
+						this.data.call(this,arguments[0],args2);
+						return this;
+					}
+				}
+				$.fn.igtbAttr = function(){
+					if(arguments.length==1){
+						var _rst = this.attr.apply(this,arguments);
+						_rst = beneform.escape(_rst);
+						return _rst;
+					}
+					else if(arguments.length==2){
+						var args2 = arguments[1];
+						args2 = beneform.unescape(args2);
+						this.attr.call(this,arguments[0],args2);
+						return this;
+					}
+				}
+				$.fn.igtbProp = function(){
+					if(arguments.length==1){
+						var _rst = this.prop.apply(this,arguments);
+						_rst = beneform.escape(_rst);
+						return _rst;
+					}
+					else if(arguments.length==2){
+						var args2 = arguments[1];
+						args2 = beneform.unescape(args2);
+						this.prop.call(this,arguments[0],args2);
+						return this;
+					}
+				}
+				
+			});
+			
+		});
+		beneform.setRegisterServerEnvironmentFunction(beneform.resolve("initRoutingCore,extendJquery", function(initRoutingCore,extendJquery) {
+			var core = this.core;
+			core.initMethodMap.register(false, initRoutingCore, [], 900);
+			core.initMethodMap.register(false, extendJquery, [], 1100,beneform);
+			core.readyMethodMap.register(false, this.core.routingCore.initMethodMap.runPreExecuteFunction, [], 100, this.core.routingCore.initMethodMap);
+		}, beneform));
+		beneform.main();
+		beneform.FIND_LANG_VALUE = beneform.LANGUAGE.language.findLanguageValue;
+		beneform.initial = true;
+		beneform.CHECK_DATE_FUNLIST = {};
+		beneform.CFG_VALIDATE = function(json) {
+			try {
+				if(this.initial) {
+					this.PROGRESS_INDICATOR.ready();
+					this.initial = false;
+				}
+				this.STRUCTURE_MODULES(json);
+				this.core.routingCore.dynamicallyLoadFileCallbackMethodMap.runPreExecuteFunction();
+			} catch(e) {
+				beneform.PROGRESS_INDICATOR.hide();
+				beneform.PROGRESS_INDICATOR.remove("default");
+				console.error(e);
+			}
+		}
+		beneform.CFG_HANDLE = function(json) {
+			try {
+				this.core.readyMethodMap.runPreExecuteFunction();
+				this.core.routingCore.updateCurrentModule([]);
+				$("form").igtbProp("method", "post");
+				this.STRUCTURE_MODULES(json);
+			} catch(e) {
+				beneform.PROGRESS_INDICATOR.hide();
+				beneform.PROGRESS_INDICATOR.remove("default");
+				console.error(e);
+			}
+		}
+		beneform.INIT = function(page,preventNeedFoucs,preventReportError) {
+			try {
+				this.GET_MODULE().page = page;
+				if(!preventReportError){
+					if(typeof OBJ == "undefined") return;
+					if(typeof OBJ.message != "undefined"){
+						OBJ.getField = function(index){
+							for(var i=0;i<OBJ.message.length;i++){
+								if(OBJ.message[i].field.length==index)return i;
+							}
+							return -1;
+						}
+						OBJ.splice = function(index){
+							var rst = this.getField(index);
+							if(rst == -1)return;
+							OBJ.message.splice(rst,1);
+						}
+						this.REPORT_SERVER_VALIDATION_MSG(OBJ, this.FORM_ID);
+					};
+				}
+				if(!preventNeedFoucs){
+					$("[needfocus='Y']").each(function(i, item) {
+						var classFor=$(item).parents("[class-for]").attr("class-for");
+						if($(item)[0].tagName === "INPUT") {
+							if(classFor){
+								var classForArr=classFor.split(',');
+									if(classForArr.length>1){
+										classForArr.forEach(function(item2,index){
+											var $ele = $(item).parents("[class-for]");
+											$("[name="+item2+"]").val()!="" ? $ele.addClass("focus valid") : $ele.removeClass("valid");
+										})
+								 	}else{
+										var _$ele = $("[class-for='" + $(item).attr("name") + "']");
+										if($(item).igtbVal())_$ele.addClass("focus valid");
+										}
+									}
+						} else if($(item).igtbVal()){
+							$(item).parents("[class-for]").addClass("focus valid");
+						}
+					});
+				}
+				this.GET_MODULE().main()
+				$("#root").after($("#root #overlay"));
+	            $("#root").after($(".buttonContainer:not(.scrollButtonContainerWithFooter)"));
+	            $("#root").after($(".scrollButton").addClass("toTopBtn"));
+	            $("#overlay").addClass("container");
+	           
+				this.GET_VALIDATION().bindEvent();
+				this.LIMIT_AMOUNT_INPUT();
+				this.autoFocusPhoTrade();
+				$(".PERMISSION-DENIED").off("click").on("click",function(e){e.preventDefault();});
+				setTimeout(function() {
+					this.PROGRESS_INDICATOR.remove("default");
+				}.bind(this), 1)
+			} catch(e) {
+				beneform.PROGRESS_INDICATOR.hide();
+				beneform.PROGRESS_INDICATOR.remove("default");
+				console.error(e);
+			}
+		};
+		beneform.ANALYSIS_OBJECT = function(data) {
+			function createFormTree(data) {
+				var formTree = {},
+					forms = beneform.GET_MODULE().registerForms();
+				forms.forEach(function(value, index, arr) {
+					formTree[value.formId] = {};
+					value.fields.forEach(function(value2, index2, arr2) {
+						var node = {
+							"value": []
+						};
+						formTree[value.formId][value2.name] = (node);
+					});
+				});
+				traverseObj(data.object, function(value, key) {
+					traverseFormTree(formTree, function(valueArr, key, value, name) {
+						if(key == name)
+							valueArr.value.push(value);
+					}, value, key);
+				});
+
+				function isFormModelLeaf(v) {
+					if(v.value) return true;
+					return false;
+				}
+
+				function traverseObj(obj, callback) {
+					for(var i in obj) {
+						if(beneform.isString(obj[i])) {
+							callback(obj[i], i);
+						}
+					}
+				}
+
+				function traverseFormTree(data, callback, value, name) {
+					for(var i in data) {
+						if(isFormModelLeaf(data[i])) {
+							callback(data[i], i, value, name);
+						} else {
+							traverseFormTree(data[i], callback, value, name);
+						}
+					}
+				}
+				traverseFormTree(formTree, function(leaf, i, value) {
+					if(leaf.value.length == 1) {
+						leaf.value = leaf.value[0]
+					} else if(leaf.value.length == 0) {
+						leaf.value = "";
+					}
+				});
+				return formTree;
+			}
+			var formTree = createFormTree(data);
+			$.extend(true, beneform.GET_MODULE().data, formTree);
+		}
+		beneform.SET_VALUE = function($ele, value) {
+			var type = $ele.attr("type");
+
+			if(type == 'custom') {
+				$ele.text(value);
+			} else {
+				$ele.val(value);
+			}
+
+		}
+		beneform.UNFORMAT_TEMPLATE = function(formId) {
+			var formDataModel;
+			if(beneform.GET_MODULE().data[formId]) {
+				formDataModel = beneform.GET_MODULE().data[formId];
+				for(var name in formDataModel) {
+					if($("#" + formId + " [name='" + formDataModel[name].name + "']").length == 1) {
+						var value = formDataModel[name].value;
+						if(value) {
+							beneform.SET_VALUE($("#" + formId + " [name='" + formDataModel[name].name + "']"), value);
+						}
+					} else if($("#" + formId + " [name='" + formDataModel[name].name + "']").length > 1) {
+
+						var value = formDataModel[name].value;
+						if(!beneform.isArray(value) || !value.join("")) {} else {
+							$("#" + formId + " [name='" + formDataModel[name].name + "']:enabled").each(function(index, value) {
+								beneform.SET_VALUE($(value), formDataModel[name].value[index]);
+							});
+						}
+					}
+				}
+			}
+		}
+		beneform.SUBMIT_DRAFT = function(formId, callback) {
+			var _obj = {};
+
+			if($("#" + formId).length == 0) {
+				return beneformLog.warning("FormId not found", "beneform", "SUBMIT_DRAFT", "formId", formId);
+			}
+			if(!this.GET_MODULE().data[formId]) {
+				return beneformLog.warning("Data model not found", "beneform", "SUBMIT_DRAFT", "formId", formId);
+			}
+			var _formIdObj = this.GET_MODULE().data[formId];
+			for(var _name in _formIdObj) {
+				var value = this.GetValueByForm.setFormId(formId).setName(_name).value().value;
+
+				if(this.isArray(value) && value.length == 1) {
+					value = value[0];
+				}
+
+				var _dataType = this.DATA_TYPE_MANAGER.getDataType(_formIdObj[_name].dataType);
+				_formIdObj[_name]["viewValue"] = value;
+				if(_dataType) {
+					if(this.isArray(value)) {
+						var _arr = [];
+						value.forEach(function(eachValue, index) {
+							_arr.push(_dataType.unformat(eachValue));
+						});
+						value = _arr;
+					} else {
+						value = _dataType.unformat(value);
+					}
+				}
+				_obj[_name] = value;
+				_formIdObj[_name]["value"] = value;
+			}
+			callback(_obj);
+		}
+		beneform.STORAGE = {};
+		beneform.STORAGE.setItem = function() {};
+		beneform.CHANGE_PAGE = function() {};
+		beneform.VSCFilter = function() {
+			if(!beneform.GET_MODULE().replaceCodeCfg) return;
+
+			var _cfgArr = beneform.GET_MODULE().replaceCodeCfg();
+
+			function op(formId, name, rule, codes) {
+				var _VSCArr = [],
+					_VSCArr2 = [];
+				beneform.VALIDATION_STATE_CODE_COLLECTION.codeCollection.forEach(function(item) {
+
+					if(item.codes[0][0] == beneform.pluginsInitPool.validation.config.normalCode||item.codes[0][0] == beneform.pluginsInitPool.validation.config.ignoreCode) return;
+
+					if(item.formId == formId) {
+						_VSCArr.push(item);
+					}
+
+				});
+
+				_VSCArr.forEach(function(item) {
+					if(item.name == name) {
+						_VSCArr2.push(item);
+					}
+				});
+
+				_VSCArr2.forEach(function(item) {
+					switch(item.weight) {
+						case beneform.pluginsInitPool.validation.config.dataTypeValidationWeight:
+							if(rule == 'dataType') item.setCodes(codes);
+							break;
+						case beneform.pluginsInitPool.validation.config.maxLengthValidationWeight:
+							if(rule == 'maxLength') item.setCodes(codes);
+							break;
+						case beneform.pluginsInitPool.validation.config.minLengthValidationWeight:
+							if(rule == 'minLength') item.setCodes(codes);
+							break;
+						case 100:
+							if(rule == 'required') item.setCodes(codes);
+							break;
+						default:
+							break;
+					}
+
+				});
+
+			}
+
+			_cfgArr.forEach(function(item) {
+				var _formId = item.formId;
+				item.fields.forEach(function(item) {
+					var _name = item.name;
+
+					for(var rule in item.rules) {
+						op(_formId, _name, rule, item.rules[rule]);
+					}
+				})
+			});
+		}
+		beneform.getPageFormValue = function(needEscape) {
+			var _rst = {};
+			var $effectForms = new Map;
+			var $form = $("form");
+			$form.each(function(index, item) {
+				if($(item).attr("id")) {
+					$effectForms.set($(item).attr("id"), item);
+				}
+			})
+			var _overlayForms = [];
+			$("#overlay form").each(function(index, item) {
+				if($(item).attr("id")) {
+					_overlayForms.push($(item).attr("id"));
+				}
+			});
+			_overlayForms.forEach(function(item) {
+				$effectForms["delete"](item);
+			});
+			beneform.resolve(function(GetValueByForm) {
+				var tools = new GetValueByForm();
+
+				$effectForms.forEach(function(value, index, arr) {
+					var _formId = index;
+					_rst[_formId] = {};
+					var _names = $(value).find("[name]");
+					_names.each(function(index, item) {
+						var _name = $(item).attr("name");
+						if(_name.indexOf(".") != -1) return beneformLog.warning(_name, "beneform", "getPageFormValue", "_name", "This name will be ignored to get value,because of there are chars \".\" existed.")
+
+						tools.setFormId(_formId);
+						tools.setName(_name);
+						var _value = tools.value().value;
+						if(_value.length == 1) _value = _value[0];
+						_rst[_formId][_name] = _value;
+					});
+				});
+
+			})();
+			if(needEscape||typeof needEscape === "undefined") _rst = traveObj(_rst,this.escape);
+			return _rst;
+		};
+		beneform.getPageValueForTrade = function(needEscape) {
+			var _rst = {};
+			var $effectForms = new Map;
+			var $form = $("form");
+			$form.each(function(index, item) {
+				if($(item).attr("id")) {
+					$effectForms.set($(item).attr("id"), item);
+				}
+			})
+			var _overlayForms = [];
+			$("#overlay form").each(function(index, item) {
+				if($(item).attr("id")) {
+					_overlayForms.push($(item).attr("id"));
+				}
+			});
+			_overlayForms.forEach(function(item) {
+				$effectForms["delete"](item);
+			});
+			(function() {
+				$effectForms.forEach(function(value, index, arr) {
+					var _formId = index;
+					_rst[_formId] = {};
+					var _names = $(value).find("[name]");
+					var sameName;
+					_names.each(function(index, item) {
+						var valueArr=[],_value;
+						sameName = $(item).attr("name");
+						if(sameName.indexOf(".") != -1) return beneformLog.warning(_name, "beneform", "getPageFormValue", "_name", "This name will be ignored to get value,because of there are chars \".\" existed.")
+						if(typeof _rst[_formId][sameName] != "undefined") return true;
+						var element;
+						if($('[name='+sameName+']').parents("[form-component=goodItem]").length){
+							element= $("#" + _formId +' [form-component=goodItem].saved').find("[name=" + sameName + "]").not(':disabled');
+						}else{
+							element= $("#" + _formId).find("[name=" + sameName + "]").not(':disabled');
+						}
+						if(element.length>1){
+							element.each(function(index,item1){
+								if($(item1).attr("type")=="checkbox"){
+									$(item1).is(':checked') ? _value =$(item1).val() : _value ="";
+								}else{
+									_value =$(item1).val();
+								}
+								valueArr.push(_value);
+							})
+							_rst[_formId][sameName]=valueArr;
+						}else{
+							if(element.attr("type")=="checkbox"){
+								element.is(':checked') ? _value =element.val() : _value="";
+							}else{
+								_value =element.val()
+							}
+							if(typeof _value != "undefined") _rst[_formId][sameName]=_value;
+						}
+					});
+				});
+			})();
+			if(needEscape||typeof needEscape === "undefined") _rst = traveObj(_rst,this.escape);
+			return _rst;
+		};
+		beneform.AjaxRequestToken = {
+				id: "",
+				tabId: "",
+				dynamicTokenList: []
+		};
+		beneform.AjaxRequest = (function(B) {
+			var AJAX_RESULT = {
+				'SUCCESS': 'success',
+				'ERROR': 'error',
+				'EXCEPTION': 'exception',
+				'FAILURE': 'failure'
+			};
+			var DYNAMIC_TOKEN_ID = "__sys_dynamicToken_token_id";
+			var DYNAMIC_TOKEN = "__sys_dynamicToken_token";
+			var AJAX_RETRY_TYPE = "__sys_retryType";
+			var AJAX_FORWARD_RETRY_TYPE = "AJAX";
+			var AJAX_ASYNC = "async";
+			var AJAX_POPUP_TIMEOUT = "timeout";
+			var AJAX_ERRORBOX = "alertErrorBox";
+			var FORCE_NO_VALIDATION = "noValidation";
+			var AJAX_OFF_BLOCKUI = "offBlockUi";
+			var AJAX_LANG = "__sys_lang";
+			var AJAX_LOAD_DOM = "loadDOM";
+			var JAXB_REPLACE_URL = "__ux_replace_url";
+			var AJAX_DATATYPE = "dataType";
+
+			var ajaxtime = true;
+			var AjaxRequest = function(url, callBackSuccessFunc, callBackErrorFunc, notGoErrorPage) {
+				this.url = url;
+				this.keys = [];
+				this.values = [];
+				this.funcSuccess = null;
+				this.funcError = null;
+				this.async = true;
+				this.timeout = true;
+				this.alertErrorBox = true;
+				this.noValidation = false;
+				this.offBlockUi = false;
+				this.dataType = "json";
+				this.inputParam = new Object();
+				this.dynamicToken = null;
+				this.tabId = beneform.AjaxRequestToken.tabId;
+				this.errorHandler = true;
+				this.xhr = null;
+				this.appendValue = function(key, value) {
+					this.keys.push(key);
+					this.values.push(value);
+				};
+				this.setFuncSuccess = function(funcSuccess) {
+					this.funcSuccess = funcSuccess;
+				};
+				this.setFuncError = function(funcError) {
+					this.funcError = funcError;
+				};
+				this.setDynamicToken = function(dynamicToken) {
+					this.dynamicToken = dynamicToken;
+				};
+				this.disableErrorMsgHandler = function() {
+					this.errorHandler = false;
+				};
+				this.alertError = function(msg) {
+					msg = msg ? msg : "Exceptions.";
+					if(ajaxtime == true) {
+						overlay.init('ajaxErrorBox');
+						overlay.AjaxErrorBox.show(msg, function() {
+							overlay.AjaxErrorBox.hide();
+						});
+					}
+					ajaxtime = false;
+					setTimeout(function() {
+						ajaxtime = true;
+					}, 1500)
+				};
+				this.checkInbox = function(returnData) {
+					beneformLog.info(returnData.inboxMsg, 'checkInbox', 'check inbox new message.');
+					try {
+						if(returnData.result) {
+							if(returnData.inboxMsg) {
+								$('.icon-emailHover').addClass('alertIcon');
+							} else {
+								$('.icon-emailHover').removeClass('alertIcon');
+							}
+						}
+					} catch(e) {
+						beneformLog.info(e, 'Failure.', 'checkInbox', 'check inbox new message failed!');
+					}
+				};
+				this.checkCmmError = function(msg) {
+					beneformLog.info(msg, 'checkCmmError', 'check cmm error code IE0180.');
+					try {
+						var cmmCode = 'IE0180',
+							flag = false;
+						if(msg.message) {
+							msg.message.forEach(function(item, index) {
+								if(item.code == cmmCode || item.text.indexOf(cmmCode) != -1) flag = true;
+							});
+						}
+						if(flag) {
+							try {
+								beneform.SUBMIT_BY_FORM(gotoTwoFALogin,{"parameters":beneform.escape(JSON.stringify(msg))});
+							} catch(e) {
+								beneform.SUBMIT_BY_FORM(gotoTwoFALogin);
+								return false;
+							}
+							return false;
+						}
+					} catch(e) {
+						beneformLog.info(e, 'Failure.', 'checkCmmError', 'Can not find error code IE0180.');
+					}
+				};
+				this.abortAjax = function() {
+					if(this.xhr) {
+						this.xhr.abort();
+					}
+				}
+				this.postAjax = function() {
+					for(var i = 0; i < this.keys.length; i++) {
+						if(i > 0 && (this.keys)[i] == "method") {
+							$(".content-page").html("method repeat!");
+							return null;
+						}
+						
+						if(!beneform.isUndefined(this.inputParam[(this.keys)[i]])) {
+							if(beneform.isArray(this.inputParam[(this.keys)[i]])) {
+								this.inputParam[(this.keys)[i]].push((this.values)[i]);
+							} else {
+								this.inputParam[(this.keys)[i]] = [this.inputParam[(this.keys)[i]]];
+								this.inputParam[(this.keys)[i]].push((this.values)[i]);
+							}
+						} else {
+							this.inputParam[(this.keys)[i]] = (this.values)[i];
+						}
+						
+						if((this.keys)[i] == AJAX_ASYNC) {
+							this.async = (this.values)[i];
+							delete this.inputParam[AJAX_ASYNC];
+						}
+						if((this.keys)[i] == AJAX_POPUP_TIMEOUT) {
+							this.timeout = (this.values)[i];
+							delete this.inputParam[AJAX_POPUP_TIMEOUT];
+						}
+						if((this.keys)[i] == AJAX_ERRORBOX) {
+							this.alertErrorBox = (this.values)[i];
+							delete this.inputParam[AJAX_ERRORBOX];
+						}
+						if((this.keys)[i] == FORCE_NO_VALIDATION) {
+							this.alertErrorBox = false;
+							this.noValidation = (this.values)[i];
+							delete this.inputParam[FORCE_NO_VALIDATION];
+						}
+						if((this.keys)[i] == AJAX_OFF_BLOCKUI) {
+							this.offBlockUi = (this.values)[i];
+							delete this.inputParam[AJAX_OFF_BLOCKUI];
+						}
+						if((this.keys)[i] == AJAX_LOAD_DOM) {
+							this.loadDOM = (this.values)[i];
+							delete this.inputParam[AJAX_LOAD_DOM];
+						}
+						if ((this.keys)[i] == JAXB_REPLACE_URL) {
+							this.url = (this.values)[i];
+							delete this.inputParam[JAXB_REPLACE_URL];
+						}
+						if ((this.keys)[i] == AJAX_DATATYPE) {
+							this.dataType = (this.values)[i];
+							delete this.inputParam[AJAX_DATATYPE];
+						}
+					}
+					if(this.dynamicToken == null) {
+						this.inputParam[DYNAMIC_TOKEN_ID]=beneform.AjaxRequestToken.id;
+						if(beneform.AjaxRequestToken.dynamicTokenList.length>0)
+						{
+							this.inputParam[DYNAMIC_TOKEN] = beneform.AjaxRequestToken.dynamicTokenList.shift();
+						}
+					}
+					if(this.dynamicToken!=null) {
+						this.inputParam[DYNAMIC_TOKEN]=this.dynamicToken;
+					}
+					this.inputParam[AJAX_RETRY_TYPE]=AJAX_FORWARD_RETRY_TYPE;
+					
+					if(typeof this.inputParam[AJAX_LANG] == "undefined") {
+						this.inputParam[AJAX_LANG] = window.getLanguageType;
+					}
+
+					var returnObj = null;
+					try {
+						if(this.loadDOM && typeof this.loadDOM === 'string' && $(this.loadDOM).length > 0) {
+							if($(this.loadDOM).find('.loading').length > 0 ){
+								return false;
+							}else{
+								$(this.loadDOM).append("<div class='loading'></div>")
+							}
+						}
+						if(!this.offBlockUi) {
+							beneform.PROGRESS_INDICATOR.add(this.url);
+						}
+
+						if(this.timeout != "false") {
+							var langType = "";
+							try {
+								langType = $("#langType").get(0).value;
+							} catch(e) {
+								langType = $('#langType', top.document).val();
+							}
+						}
+						var dotdoReg = new RegExp(/.do$/g);
+						var isHTML = dotdoReg.test(this.url);
+						if(isHTML && this.dataType == "json") {
+							this.dataType = "html";
+						}
+						$.when(this.sendRequest()).done(function(msg) {
+							beneform.PROGRESS_INDICATOR.remove(this.url);
+							var ajaxutil = new AjaxUtil();
+							ajaxutil.dynamicTokenHandle(msg, isHTML, this);
+							if(beneform.AjaxRequestToken.tabId && this.tabId != beneform.AjaxRequestToken.tabId) return false;
+							try {
+								returnObj = msg;
+								if(returnObj.object && returnObj.object.twofaStatObj && typeof(isTokenCommon) != "undefined" && typeof(isTokenCommon) != "undefined" && typeof(isHighRiskCommon) != "undefined"){
+									isTokenCommon = returnObj.object.twofaStatObj.statTwofaReq;
+									authReqCommon = returnObj.object.twofaStatObj.authReq;
+									isHighRiskCommon = returnObj.object.twofaStatObj.statHighRsk;
+								}else{
+									isTokenCommon = false;
+									authReqCommon = "";
+									isHighRiskCommon = false;
+								}
+								var data = this.inputParam ? this.inputParam : "";
+
+								this.checkInbox(msg);
+								if(this.checkCmmError(msg) === false) {
+									return false;
+								}
+								beneformLog.info(returnObj, "postAjax", "success");
+								if(typeof(needSmartCard)!="undefined" && typeof(returnObj.object)!="undefined"){
+									 needSmartCard = returnObj.object.needSmartCard;
+								}
+								if(typeof returnObj.message != "undefined" && returnObj.message["0"].code == "FE0001") {
+									if(typeof readSmartCart != "undefined"&&beneform.isFunction(readSmartCart)){
+										readSmartCart();
+										return;
+									}
+								}
+								if((isHTML && beneform.isString(returnObj)) || returnObj.result == AJAX_RESULT.SUCCESS) {
+									try {
+										if(isHTML && beneform.isString(returnObj) && returnObj.indexOf('__sys_page_duplicate') != -1){
+											beneform.SUBMIT_BY_FORM(dupLoginUrl) 
+											return false;
+										}
+										if(isHTML && beneform.isString(returnObj) && returnObj.indexOf('__sys_page_timeout_IE8050') != -1){
+											beneform.SUBMIT_BY_FORM(timeoutErrorUrl,{__sys_c001_flag:'true', __sys_c001_type:'IE8050'});
+											return false;
+										}
+										if(isHTML && beneform.isString(returnObj) && returnObj.indexOf('__sys_page_needTwoFA_IE0180') != -1){
+											try {
+												var flag = "var twoFAServerMsg=";
+												var serverMsg = returnObj.substring(returnObj.indexOf(flag) + flag.length, returnObj.lastIndexOf(';</script>'));
+												if(serverMsg) {
+													beneform.SUBMIT_BY_FORM(gotoTwoFALogin,{"parameters":beneform.escape(returnObj)});
+												}
+											} catch(e) {
+												beneform.SUBMIT_BY_FORM(gotoTwoFALogin);
+											}
+											return false;
+										}
+										if(isHTML && beneform.isString(returnObj) && returnObj.indexOf('__sys_page_timeout') != -1){
+											beneform.SUBMIT_BY_FORM(timeoutErrorUrl,{__sys_c001_flag:'true', __sys_c001_type:'0'});
+											return false;
+										}
+										if(isHTML && beneform.isString(returnObj) && returnObj.indexOf('__sys_page_expiry') != -1){
+											window.location.href = '/html/errhandle/gib_ehg_expiry_page_' + getLanguageType + '.html';
+											return false;
+										}
+										if(isHTML && beneform.isString(returnObj) && returnObj.indexOf('__sys_page_lastMessage') != -1){
+											beneform.SUBMIT_BY_FORM(lastMessageUrl);
+											return false;
+										}
+										require(['headerModule'], function(headerModule) {
+											headerModule.resetTimeIndicator(headerModule.timeoutStep);
+										});
+									} catch(e) {
+										beneformLog.warning(e,"Reset login timeout failed!", "beneform", "AjaxRequest");
+									}
+									if(typeof this.funcSuccess === 'function')
+										this.funcSuccess.apply(null, [returnObj, this.inputParam]);
+									if(this.errorHandler)
+										ajaxutil.hideErrorMessage();
+									ajaxutil.toFuncSuccess(returnObj, callBackSuccessFunc);
+									if(!this.noValidation) beneform.REPORT_SERVER_VALIDATION_MSG(returnObj, beneform.FORM_ID);
+								} else if(returnObj.result == AJAX_RESULT.ERROR) {
+									if(typeof this.funcError === 'function')
+										this.funcError.apply(null, [returnObj, this.inputParam]);
+									if(this.errorHandler)
+										ajaxutil.showErrorMessage(returnObj);
+									ajaxutil.toFuncError(returnObj, callBackErrorFunc);
+									if(this.alertErrorBox) this.alertError(returnObj.message);
+								} else if(returnObj.result == AJAX_RESULT.FAILURE) {
+									if(typeof this.funcError === 'function')
+										this.funcError.apply(null, [returnObj, this.inputParam]);
+									if(!this.noValidation && beneform.FORM_ID) beneform.REPORT_SERVER_VALIDATION_MSG(returnObj, beneform.FORM_ID);
+									else if(!this.noValidation && this.alertErrorBox) this.alertError(returnObj.message);
+									ajaxutil.toFuncError(returnObj, callBackErrorFunc);
+								} else if(returnObj.result == AJAX_RESULT.EXCEPTION) {
+									if(returnObj.message["0"].code === 'IE6003') {
+										window.location.href = '/html/errhandle/gib_ehg_cutoff_page_' + getLanguageType + '.html';
+										return false;
+									} else if(returnObj.message["0"].code === 'Z10041') {
+										window.location.href = '/html/errhandle/gib_ehg_chgpwd_failcount_' + getLanguageType + '.html';
+										return false;
+									}else if(returnObj.message["0"].code === 'C00103' || returnObj.message["0"].code === 'C00101' || returnObj.message["0"].code === 'IE8050') {
+										window.location.href = '/html/errhandle/gib_ehg_expiry_page_' + getLanguageType + '.html';
+										return false;
+									} else if(returnObj.message["0"].code === '10020') {
+										beneform.SUBMIT_BY_FORM(lastMessageUrl);
+										return false;
+									}
+									if(typeof this.funcError === 'function')
+										this.funcError.apply(null, [returnObj, this.inputParam]);
+									ajaxutil.toFuncError(returnObj, callBackErrorFunc);
+									if(this.alertErrorBox) this.alertError(returnObj.message);
+								} else {
+									if(typeof this.funcError === 'function')
+										this.funcError.apply(null, [returnObj, this.inputParam]);
+									ajaxutil.toFuncError(returnObj, callBackErrorFunc);
+									if(this.alertErrorBox) this.alertError(returnObj.message);
+								}
+							} catch(e) {
+								var ajaxutil = new AjaxUtil();
+								ajaxutil.toFuncError(returnObj, callBackErrorFunc);
+								beneformLog.warning(e, 'AjaxRequest', 'success', 'request', 'Can not handle the error type.');
+							}
+						}.bind(this)).fail(function(request, textStatus, error) {
+							var ajaxutil = new AjaxUtil();
+							if(beneform.AjaxRequestToken.tabId && this.tabId != beneform.AjaxRequestToken.tabId) return false;
+							if(textStatus == "timeout") {
+								beneformLog.warning(request, "AjaxRequest", "error", "request", "Timeout.");
+								overlay.hideAll();
+								if(this.alertErrorBox) {
+									ajaxTimeoutError = typeof this.alertErrorBox === 'string' ? this.alertErrorBox : ajaxTimeoutError;
+									this.alertError(ajaxTimeoutError);
+								}
+							} else if(textStatus == "parsererror") {
+								beneformLog.warning(request, "AjaxRequest", "error", "request", "Parhaps the json from server parser error.");
+							} else if(textStatus == 'abort') {
+								beneformLog.warning("AjaxRequest", "abort", "Aborting ajax request by programer.");
+							} else {
+								ajaxutil.toFuncError(textStatus, callBackErrorFunc);
+								if(this.alertErrorBox) this.alertError(beneform.FIND_LANG_VALUE("error.SE0001"));
+								beneformLog.warning(request, "AjaxRequest", textStatus, "UnKnow error.");
+								return null;
+							}
+
+							ajaxutil.toFuncError(textStatus, callBackErrorFunc);
+						}.bind(this)).always(function(request) {
+							beneform.PROGRESS_INDICATOR.remove(this.url);
+							$(this.loadDOM).find('.loading').remove();
+						}.bind(this));
+					} catch(e) {
+						beneformLog.warning("beneform.AjaxRequest",e);
+					} finally {}
+					return returnObj;
+				};
+
+				this.sendRequest = function() {
+					var defer = $.Deferred();
+					this.inputParam = traveObj(this.inputParam,beneform.unescape);
+					var ajaxOpt = {
+						type: "post",
+						url: this.url,
+						data: this.inputParam ? this.inputParam : "",
+						dataType: this.dataType,
+						timeout: 55000,
+						async: this.async,
+						alertErrorBox: this.alertErrorBox,
+						traditional: true,
+						cache: false,
+						beforeSend: function(xhr) {
+							this.xhr = xhr;
+							beneform.xhrPool.push(xhr);
+						}.bind(this),
+						success: function(msg) {
+							if(msg) {
+								defer.resolve(msg);
+							}
+						},
+						error: function(request, textStatus, error) {
+							if(request) {
+								defer.resolve(request, textStatus, error);
+							}
+						},
+						complete: function(request) {
+							if(request) {
+								defer.resolve(request)
+							}
+						}
+					}
+					
+					$.ajax(ajaxOpt);
+					return defer;
+				}
+			}
+
+			function AjaxUtil() {
+				this.dynamicTokenHandle = function(returnObj, isHtml, ajax)
+				{
+					if (isHtml && beneform.isString(returnObj))
+					{
+						var id = ajax.xhr.getResponseHeader("tokenId");
+						var dynamicToken = ajax.xhr.getResponseHeader("dynamicToken");
+						if(dynamicToken && id === beneform.AjaxRequestToken.id)
+						{
+							beneform.AjaxRequestToken.dynamicTokenList.push(dynamicToken);
+						}
+					}
+					else
+					{
+						if(returnObj && returnObj.dynamicToken && returnObj.tokenId === beneform.AjaxRequestToken.id)
+						{
+							beneform.AjaxRequestToken.dynamicTokenList.push(returnObj.dynamicToken);
+						}
+					}
+				};
+				
+				this.toFuncError = function(returnObj, callBackErrorFunc) {
+					if(typeof(callBackErrorFunc) == "function") {
+						callBackErrorFunc.apply(null, [returnObj]);
+					} else {
+						beneformLog.warning(returnObj, "Exception: callBackErrorFunc not found!")
+					}
+				};
+
+				this.toFuncSuccess = function(returnObj, callBackSuccessFunc) {
+					if(typeof(callBackSuccessFunc) == "function") {
+						callBackSuccessFunc.apply(null, [returnObj]);
+					} else {
+						this.toFuncError(this.returnErrorObj(AJAX_RESULT.ERROR, "Exception: callBackSuccessFunc not found!", ''));
+					}
+				};
+				
+
+				this.returnErrorObj = function(result, returnData, dynamicToken) {
+					var obj = new Object();
+					obj.result = result;
+					obj.returnData = returnData;
+					obj.dynamicToken = dynamicToken;
+					return obj;
+				};
+
+				var errorMessage = 'errorMessage';
+				this.showErrorMessage = function(returnData) {
+					if(returnData) {
+						$('#' + errorMessage)
+							.html('')
+							.addClass('clear-gutter wrapinfo mar-top')
+							.append('<div class="hint1"></div>')
+							.find('div')
+							.html(returnData)
+							.show();
+					}
+				};
+
+				this.hideErrorMessage = function() {
+					$('#' + errorMessage).removeClass('clear-gutter wrapinfo mar-top')
+						.html('')
+						.hide();
+				};
+			};
+
+			if(B.RUN_MODEL == "html") {
+				AjaxRequest = function(url, success, fail) {
+					var _this = this;
+					this.url = url;
+					this.success = success;
+					this.fail = fail;
+					this.appendValue = function(key, value) {
+						this[key] = value;
+					};
+					this.postAjax = function() {
+						var _this = this;
+						if(_this.async == false) {
+							_this.success(OBJ);
+						} else {
+							setTimeout(function() {
+								_this.success(OBJ);
+							}, 1000);
+						}
+
+					}
+				}
+			}
+
+			return AjaxRequest;
+		})(beneform);
+		beneform.xhrPool = [];
+		beneform.xhrPool.abortAll = function() {
+			$(this).each(function(index, xhr){
+				xhr.abort();
+			});
+			beneform.xhrPool.splice(0,beneform.xhrPool.length);
+		};
+		beneform.abortAllAjax = function() {
+			beneform.xhrPool.abortAll();
+		};
+		beneform.autoFocusPhoTrade = function() {
+	    	$('.formInput.distTel').off('input.distTel propertychange').on('input.distTel propertychange',function(evt) {
+				var currentTarget = $(evt.currentTarget);
+				var maxNum = $(evt.currentTarget).igtbAttr("maxlength");
+				if (currentTarget.igtbVal().unescapeLength() >= maxNum) {
+					setTimeout(function(){
+						currentTarget.parent().find('.formInput.phoneTel').focus();
+					},0)
+				}
+			});
+	    };
+	    beneform.getVSSToken = function(callback, needTwoFA){
+	    	var getTokenUrl = needTwoFA ? tokenWithoutTwoFAUrl : tokenUrl;
+	    	var uploadFileInit = new beneform.AjaxRequest(getTokenUrl, function(returnObj) {
+	    		if(returnObj.result == "success") {
+	    			if($.isFunction(callback)) callback(returnObj.object);
+	    		}
+	    	}.bind(this), function(returnObj) {});
+	    	uploadFileInit.appendValue("async",false);
+	    	uploadFileInit.postAjax();
+	    }
+		beneform.uploadFile = function(fileList, callback, callback2, callback3, callback4, offBlockUi, uploadTxCode, seqNum, vssToken, isEncrypt) {
+			offBlockUi = offBlockUi ? offBlockUi : false;
+			if(!beneform.isArray(fileList)) {
+				if(typeof fileList === 'object') {
+					fileList = [fileList];
+				} else {
+					if($.isFunction(callback)) callback([]);
+					return false;
+				}
+			} else if(fileList.length == 0) {
+				if($.isFunction(callback)) callback([]);
+				return false;
+			}
+			var count = 0,
+				responseList = [],
+				errorFileList = [];
+			try {
+				for(var i = 0; i < fileList.length; i++) {
+					var n = i;
+					var fileLN = fileList[n].name;
+					var fileType = fileList[n].name.slice(fileList[n].name.lastIndexOf(".") + 1,fileList[n].name.length).toUpperCase();
+					if(isEncrypt == "Y" && !/^(PGP|MIM)$/g.test(fileType)) {
+						var responseData = ['1', encryptTypeErr, fileLN, null, null, null, null];
+						errorFileList.push(responseData);
+						beneform.isFunction(callback4) && callback4(responseData);
+						return false;
+					}
+					var fileData = new FormData();
+					fileData.append("File",fileList[n]);
+					if(isEncrypt == "Y" && beneform.isString(uploadTxCode) && /^(PGP|MIM)$/g.test(fileType)) {
+						var formData = {
+							"vssToken": vssToken,
+							"uploadTxCode": uploadTxCode
+						}
+						$("#uploadEncrypt").children().each(function(index,item) {
+							if($(item).is("input")) {
+								formData[$(item).attr("name")] = $(item).igtbVal();
+							}
+						});
+					} else {
+						var formData = {
+							"Token": vssToken
+						}
+					}
+					for(var o in formData) {
+						fileData.append(o,formData[o]);
+					}
+					function completeFnc() {
+						if(++count == fileList.length) {
+							beneform.PROGRESS_INDICATOR.remove(seqNum);
+							if($.isFunction(callback)) callback(responseList,errorFileList);
+							else beneformLog.warning(responseList, 'beneform', 'uploadFile', 'Can\'t not find the function that callback.');
+							beneform.isFunction(callback2) && callback2(errorFileList);
+						}
+					}
+					function sendToVSS() {
+						this.vssXHR = $.ajax({
+							type: "post",
+							url: (isEncrypt == "Y" && beneform.isString(uploadTxCode)) ? uploadEncryptUrl : vssDomain + '/VSS/FileUpload',
+							data: fileData,
+							processData: false,
+							contentType: false,
+							success: function(responseData) {
+								try {
+									var errFlag = "_sys_flag_error_message";
+									if(responseData.indexOf(errFlag) != "-1") {
+										var errorMsg = JSON.parse(responseData.substring(responseData.indexOf(errFlag) + errFlag.length + 2, responseData.indexOf("<EOL>")));
+										var message = "";
+										errorMsg.message.forEach(function(msg) {
+											message += msg.text + " ";
+										});
+										responseData = ['1', message, fileLN, null, null, null, seqNum];
+									} else {
+										responseData = $("<span/>").html(responseData.replace(/\s+|\n/g, " ").replace(/>\s</g, "><").split("<body>")[1].split("<EOL>")[0].trim()).text().split("|");
+										responseData[1] = beneform.reportVSSError(responseData);
+										if(/\\/.test(responseData[2])) {
+											var fileNameArr = responseData[2].split("\\");
+											responseData[2] = fileNameArr[fileNameArr.length - 1];
+										} else if(/\\\\/.test(responseData[2])) {
+											var fileNameArr = responseData[2].split("\\\\");
+											responseData[2] = fileNameArr[fileNameArr.length - 1];
+										}
+										responseData[3] = responseData[3].toUpperCase();
+										responseData.push(seqNum);
+									}
+									responseList.push(responseData);
+									if(responseData[1] == "0") beneform.isFunction(callback3) && callback3(responseData)
+									else beneform.isFunction(callback4) && callback4(responseData);
+								} catch(e) {
+									var responseData = ['1', VSSErrMsg.VEDEF, fileLN, null, null, null, seqNum];
+									responseList.push(responseData);
+									beneform.isFunction(callback4) && callback4(responseData);
+									beneformLog.warning(e, 'Vss server response error');
+								}
+							}.bind(this),
+							error: function(request, textStatus, error) {
+								var responseData = ['1', VSSErrMsg.VEDEF, fileLN, null, null, null, seqNum];
+								responseList.push(responseData);
+								errorFileList.push(responseData);
+								beneform.isFunction(callback4) && callback4(responseData);
+							},
+							complete: function() {
+								completeFnc();
+							}
+						});
+					}
+					if(!offBlockUi) beneform.PROGRESS_INDICATOR.add(seqNum);
+					if(beneform.IS_IE && !(isEncrypt == "Y" && beneform.isString(uploadTxCode) && !/^(PGP|MIM)$/g.test(fileType))) {
+						$.get(vssDomain + '/VSS/FileUpload').always(function(){
+							sendToVSS.call(this);
+						}.bind(this));
+					} else {
+						sendToVSS.call(this);
+					}
+				}
+			} catch(e) {
+				if(++count == fileList.length) {
+					if($.isFunction(callback)) callback(responseList,errorFileList);
+					else beneformLog.warning(responseList, 'beneform', 'uploadFile', 'Can\'t not find the function that callback.');
+					beneform.isFunction(callback2) && callback2(errorFileList);
+				}
+				beneformLog.error(e, 'Upload document error, please check out and try again.');
+			}
+		}
+		beneform.reportVSSError = function(errCode) {
+			var errMsg;
+			if(beneform.isString(errCode) || beneform.isArray(errCode)) {
+				errCode = beneform.isString(errCode[1]) ? errCode[1] : errCode;
+				switch(errCode) {
+					case '0': errMsg = "0"; break;
+					case '4': errMsg = VSSErrMsg["VE004"]; break;
+					default: errMsg = VSSErrMsg.VEDEF.replace("GSE0001","VSS"+errCode);
+				}
+				if(!errMsg) errMsg = VSSErrMsg.VEDEF;
+				return errMsg;
+			} else {
+				return VSSErrMsg.VEDEF;
+			}
+		}
+		beneform.sendFileToGTB = function(data, callback1, callback2, offBlockUi) {
+			offBlockUi = offBlockUi ? offBlockUi : false;
+			var sendData = {};
+			if(beneform.isArray(data)) {
+				sendData.fileInfo = data;
+			} else if(typeof data == 'object') {
+				var sendData = $.extend({},sendData,{
+					fileInfo: data.fileInfo,
+					isTrade: data.isTrade
+				});
+			}
+			var uploadReq = new beneform.AjaxRequest(uploadUrl, function(fileData) {
+				if(beneform.isString(fileData)) {
+					var empId = $(fileData).find("input.stmtID").igtbVal();
+					var preEmpId = $(fileData).find("input.preStmtID").igtbVal();
+					if(empId) callback1({object: {empId:empId,preEmpId: preEmpId}});
+					else {
+						var flag = 'data-flag="_sys_flag_error_message">';
+						var serverMsg = fileData.split(flag)[1];
+						serverMsg = serverMsg.substring(0,serverMsg.indexOf("<EOL>"));
+						if(beneform.isFunction(callback2)) callback2(JSON.parse(serverMsg));
+					}
+				} else {
+					if(beneform.isFunction(callback2)) callback2(fileData);
+				}
+			}, function(fileData) {
+				if(beneform.isString(fileData) && fileData.indexOf("_sys_flag_error_message") != -1) {
+					var flag = 'data-flag="_sys_flag_error_message">';
+					var serverMsg = fileData.split(flag)[1];
+					fileData = serverMsg.substring(0,serverMsg.indexOf("<EOL>"));
+				}
+				if(beneform.isFunction(callback2)) callback2(fileData);
+			});
+			uploadReq.appendValue("txCodeArray",currTxCode);
+			uploadReq.appendValue("fileNum",sendData.fileInfo[0]);
+			uploadReq.appendValue("resultCode",sendData.fileInfo[1]);
+			uploadReq.appendValue("fileName",sendData.fileInfo[2].split('.')[0]);
+			uploadReq.appendValue("fileType",sendData.fileInfo[3]);
+			uploadReq.appendValue("fileId",sendData.fileInfo[4]);
+			uploadReq.appendValue("hostId",sendData.fileInfo[5]);
+			uploadReq.appendValue("seqNum",sendData.fileInfo[6]);
+			if(sendData.isTrade) uploadReq.appendValue("isTrade",sendData.isTrade);
+			uploadReq.appendValue("offBlockUi", offBlockUi);
+			uploadReq.postAjax();
+			return uploadReq;
+		}
+		beneform.downloadFile = function(fileInfo, callback, errback) {
+			var requestData = {
+				fileName: "download",
+				fileContent: '',
+				statementId: null,
+				downloadUrl: '',
+				fileId: null,
+				fileFormat: ''
+			};
+			requestData = $.extend({}, requestData, fileInfo);
+			requestData.fileName = requestData.fileName.replace("."+requestData.fileFormat.toLowerCase(),"");
+			requestData.fileName = requestData.fileName.replace("."+requestData.fileFormat.toUpperCase(),"");
+			requestData.fileFormat = requestData.fileFormat.toLowerCase();
+			
+			if(isBase64(requestData.fileContent.replace(/\n/g,'')) && requestData.fileFormat) {
+				preview(requestData.fileContent, requestData.fileName, requestData.fileFormat, callback, errback);
+			} else if(requestData.statementId && requestData.fileFormat) {
+				if(/^(pdf)$/gi.test(requestData.fileFormat)) {
+					overlay.init(['uploadFilePreview']);
+					overlay.resolve(function() {
+						$("#previewForm").find("input[name=statementId]").igtbVal(requestData.statementId);
+						$("#previewForm").find("input[name=fileFormat]").igtbVal(requestData.fileFormat);
+						$("#previewForm").find("input[name=fileName]").igtbVal(requestData.fileName);
+						$("#previewForm").igtbAttr("action",previewPage).submit();
+						if(!$(".uploadFilePreviewContainer").hasClass("overlayComponentShow")) overlay.UploadFilePreview.show('',"pdf");
+					});
+				} else {
+					var downRequest = new beneform.AjaxRequest(empDownloadDomain, function(returnObj) {
+						if(returnObj.result === 'success') {
+							preview(returnObj.object.downloadContent, requestData.fileName, returnObj.object.fileFormat, callback, errback);
+						} else {
+							if($.isFunction(errback)) errback(returnObj);
+						}
+					}, function(returnObj) {
+						if($.isFunction(errback)) errback(returnObj);
+					});
+					downRequest.appendValue('statementId', requestData.statementId);
+					downRequest.appendValue('fileFormat', requestData.fileFormat);
+					downRequest.appendValue('fileName', requestData.fileName);
+					downRequest.postAjax();
+				}
+			} else if(requestData.fileId && requestData.fileFormat) {
+				var xhr = new XMLHttpRequest();
+				xhr.open('POST', vssDownloadDomain);
+				xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+				xhr.responseType = 'blob';
+				xhr.onload = function() {
+					beneform.PROGRESS_INDICATOR.remove(vssDownloadDomain);
+					if(this.status == 200) {
+						preview(blob, requestData.fileName, requestData.fileFormat, callback, errback);
+					} else {
+						if($.isFunction(errback)) errback(returnObj);
+					}
+				};
+				var dataStr = '';
+				for(var i in requestData) {
+					dataStr += i + '=' + data[i] + '&';
+				}
+				beneform.PROGRESS_INDICATOR.add(vssDownloadDomain);
+				xhr.send(dataStr);
+			} else if(requestData.downloadUrl && requestData.fileFormat == "pdf") {
+				overlay.init(['uploadFilePreview']);
+				overlay.resolve(function() {
+					$("#previewForm").find("input[name=fileFormat]").igtbVal(requestData.fileFormat);
+					$("#previewForm").find("input[name=fileName]").igtbVal(requestData.fileName);
+					$("#previewForm").igtbAttr("action",requestData.downloadUrl).submit();
+					overlay.UploadFilePreview.show('',"pdf");
+				});
+			}
+			
+			function preview(blob, name, mime, callback, errback) {
+				try {
+					if((typeof blob === "string") && !(blob instanceof Blob)) {
+						if(/^(png|jpg|jpeg|gif|bmp|tif|tiff)$/gi.test(mime)) {
+							if(/^(jpg|jpeg)$/gi.test(mime)) mime="jpeg";
+							if(/^(tif|tiff)$/gi.test(mime)) mime="tiff";
+							blob = "data:image/" + mime + ";base64," + blob.replace(/\n/g,'');
+						} else {
+							var data = blob.replace(/\n/g,''),
+							mime = mime.toLowerCase();
+							
+							var bstr = atob(data),
+							n = bstr.length,
+							u8arr = new Uint8Array(n);
+							while(n--) {
+								u8arr[n] = bstr.charCodeAt(n);
+							}
+							
+							blob = new Blob([u8arr], {type: /^(cvs|pdf)$/g.test(mime) ? 'application/' + mime : 'image/' + mime});
+						}
+					}
+					
+					if(/^(png|jpg|jpeg|gif|bmp|tif|tiff)$/gi.test(mime)) {
+						if((typeof blob === "string") && !(blob instanceof Blob)) var src = blob;
+						else var src = window.URL.createObjectURL(blob);
+						
+						overlay.init(['uploadFilePreview']);
+						overlay.resolve(function() {
+							overlay.UploadFilePreview.show(src,mime);
+						});
+					} else {
+						if('msSaveOrOpenBlob' in navigator) {
+							window.navigator.msSaveOrOpenBlob(blob, name + "." + mime);
+						} else {
+							var href = window.URL.createObjectURL(blob);
+							var link = document.createElement("a");
+							link.href = href;
+							link.download = name + "." + mime;
+							link.target = "_blank";
+							document.body.appendChild(link);
+							link.click();
+							link.remove();
+							setTimeout(function() {
+								window.URL.revokeObjectURL(href);
+							},300);
+						}
+					}
+					
+					if($.isFunction(callback)) callback(href);
+				} catch(e) {
+					if($.isFunction(errback)) errback(returnObj);
+					beneformLog.error("Download file encode fail.","beneform.downloadFile",e)
+				}
+			}
+			
+			function isBase64(str) {
+				if(beneform.isString(str) && str) return true;
+				return false;
+			}
+		}
+		beneform.VALIDATE_RULE = function(rule, values, errCode, params, formId, name, flag) {
+
+			var ruleLib = {
+				"isNum": function(values) {
+					return (/^[\d]*$/.test(values));
+				},
+				"isInteger": function(values) {
+					return !(/[.]/.test(values));
+				},
+				"hasChinese": function(values) {
+					return !(/[\u4e00-\u9fa5]/.test(values));
+				},
+				"hasNum": function(values) {
+					return (/[0-9]/.test(values));
+				},
+				"DateCompare": function(values) {
+					if(values[0] !== undefined && values[1] !== undefined){
+						var dataType=beneform.DATA_TYPE_MANAGER.getDataType("GIBDate");
+						values[0]=dataType.format(values[0]);
+						values[1]=dataType.format(values[1]);	
+						if(flag) {
+							if(values[0] !== "" && values[0] != null && values[1] !== "" && values[1] != null) {
+								return !(new Date(values[1]).getTime() < new Date(values[0]).getTime());
+							} else {
+								return true;
+							}
+						} else {
+							if(values[0] !== "" && values[0] != null && values[1] !== "" && values[1] != null) {
+								return !(new Date(values[1]).getTime() <= new Date(values[0]).getTime());
+							} else {
+								return true;
+							}
+						}
+					}
+				},
+				"AmountCompare": function(values) {
+					if(values[0] && values[1]){
+						values[0] = Number(values[0]).toString();
+						values[1] = Number(values[1]).toString();
+						if((values[0].split(".").length == 1 || values[0].split(".").length == 2 && values[0].split(".")[1].length <= 2) &&
+								(values[1].split(".").length == 1 || values[1].split(".").length == 2 && values[1].split(".")[1].length <= 2)){
+							if(flag) {
+								return !(Number(values[1]) < Number(values[0]));
+							} else {
+								return !(Number(values[1]) <= Number(values[0]));
+							}
+						}else{
+							return true;
+						}
+					}else{
+						return true;
+					}
+				},
+				"TimeCompare": function(values) {
+					if(flag) {
+						if(values[0] !== "" && values[0] != null && values[1] !== "" && values[1] != null && values[0].length == 4 && values[1].length == 4 &&
+								parseInt(values[0]) == values[0] && parseInt(values[1]) == values[1] && Number(values[0]) < 2400 && Number(values[1]) < 2400) {
+							return !(Number(values[1]) < Number(values[0]));
+						} else {
+							return true;
+						}
+					} else {
+						if(values[0] !== "" && values[0] != null && values[1] !== "" && values[1] != null && values[0].length == 4 && values[1].length == 4 &&
+								parseInt(values[0]) == values[0] && parseInt(values[1]) == values[1] && Number(values[0]) < 2400 && Number(values[1]) < 2400) {
+							return !(Number(values[1]) <= Number(values[0]));
+						} else {
+							return true;
+						}
+					}
+				},
+				"isEmpty": function(value){
+					if(!beneform.pluginsInitPool.validation.config.clientValidation) return true;
+					var _value = $.trim(value)
+					return !(_value == "");
+				},
+			}
+			if(ruleLib[rule]) {
+				if(!ruleLib[rule](values)) {
+					if(Array.isArray(name)) {
+						name.forEach(function(item) {
+							beneform.GET_VALIDATION().addErrors(errCode, params, formId, item);
+						})
+					} else {
+						beneform.GET_VALIDATION().addErrors(errCode, params, formId, name);
+					}
+				}
+			} else {
+				beneformLog.warning("rule not found!");
+			}
+		}
+		beneform.RUN_MODEL = "jsp";
+		beneform.FORM_ID = "";
+		beneform.formSubmit = function(id,warpperId) {
+			beneform.xhrPool.abortAll();
+			$("#" + id).igtbAttr("method","post");
+			this.PROGRESS_INDICATOR.show();
+			if(!this.GET_MODULE) {
+				beneformLog.warning("No module.", "beneform", "formSubmit");
+			} else {
+				if(this.isArray(id)){
+					id.forEach(function(item){
+						this.UNFORMAT_TEMPLATE(item);
+					}.bind(this))
+				}else {
+					this.UNFORMAT_TEMPLATE(id);
+				}
+			}
+			if(this.RUN_MODEL == "html") {
+				var action = $("#" + id).attr("action");
+				window.location.href = "";
+			} else if(this.RUN_MODEL == "jsp") {
+				if(warpperId){
+					$("#" + warpperId).submit();
+					return;
+				}
+				this.FORM_ID = id;
+				$("#" + id).submit();
+			} else {
+
+			}
+		}
+		beneform.SUBMIT_BACK_FORM = function(url, showOverLay) {
+			showOverLay = showOverLay ? showOverLay : "N";
+			return this.SUBMIT_BY_FORM(url, {
+				__sys_retryType: 'B'
+			}, showOverLay);
+		}
+		beneform.SUBMIT_REFERENCE = function(txCode, jnlNo, url) {
+
+			if(!(typeof m200detail !== 'undefined' || url)) {
+				beneformLog.warning("Default url does not exsited,nothing can be submited.", "beneform", "SUBMIT_REFERENCE", "m200detail");
+				return null;
+			}
+
+			var _url = m200detail;
+			var _obj = {
+				jnlNo: $("#overlay .subMsg .msg").text().trim(),
+				txCode: txCode
+			}
+			if(arguments[1]) {
+				_obj.jnlNo = jnlNo;
+			}
+			if(arguments[2]) {
+				_url = url;
+			}
+			return this.SUBMIT_BY_FORM(_url, _obj, "N");
+		}
+		beneform.SUBMIT_BY_FORM = function(args, args2, args3, args4) {
+			beneform.xhrPool.abortAll();
+			var _token = $("#default-form [name='__sys_token']").val();
+			var _this = this;
+			if(this.isString(args)) {
+				var _args = {
+					url: args,
+					list: beneform.isArray(args2) ? args2 : [args2],
+					showOverLay: args3 ? args3 : "N",
+					target: args4 ? args4 : "_self"
+				}
+				args = _args;
+			}
+			beneformLog.info(args, "beneform", "SUBMIT_BY_FORM", "args");
+			
+			args = traveObj(args,beneform.unescape);
+			if(_token){
+				if(beneform.isUndefined(args.list[0])){
+					args.list[0] = {};
+				}
+				args.list[0].__sys_token = _token;
+			}
+			
+			if(!args.url) {
+				beneformLog.warning("invalid url: " + args.url, "beneform", "SUBMIT_BY_FORM", "args.url");
+				return false;
+			}
+			if(!this.isArray(args.list)) {
+				beneformLog.warning("invalid list: " + args.list, "beneform", "SUBMIT_BY_FORM", "args.list");
+				return false;
+			}
+			if(!args.showOverLay) {
+				beneformLog.warning("invalid showOverLay: " + args.showOverLay, "beneform", "SUBMIT_BY_FORM", "args.showOverLay");
+				return false;
+			}
+
+			if(args.showOverLay == "Y") {
+				overlay.init(['alert']);
+				overlay.resolve(function() {
+					overlay.AlertConfirmBox.show(
+						alertConfirmButton.overlayConfirmBoxMessage, {
+							text: alertConfirmButton.yesBtn,
+							action: function() {
+								sbf(arguments);
+							}
+						}, {
+							text: alertConfirmButton.noBtn,
+							action: function() {
+								overlay.AlertConfirmBox.hide();
+							}
+						}
+					);
+				})
+			} else {
+				sbf(arguments);
+			}
+
+			function sbf(params) {
+				var _form = document.createElement("form");
+				var _$form = $(_form);
+				var _inputStr = "<input type='hidden'></input>";
+				_$form.prop("action", args.url).prop("method", "post").prop("target",args.target);
+				args4 && _$form.prop("target", args4);
+				var hashLangFlag = false;
+				args.list.forEach(function(item) {
+					for(var key in item) {
+						if(key === '__sys_lang')
+						{
+							hashLangFlag = true;
+						}
+						var _$input = $(_inputStr).prop("name", key).val(item[key]);
+						beneformLog.debug(_$input[0], "beneform", "CREATE_FORM", "_$input[0]");
+						_$form.append(_$input);
+					}
+				});
+				if(!hashLangFlag)
+				{
+					var _$input = $(_inputStr).prop("name", "__sys_lang").val(window.getLanguageType);
+					beneformLog.debug(_$input[0], "beneform", "CREATE_FORM", "_$input[0]");
+					_$form.append(_$input);
+				}
+				beneformLog.debug(_$form[0], "beneform", "CREATE_FORM", "_$form[0]");
+				if(args.target == '_self' || args.target == '_parent' || args.target == '_top') _this.PROGRESS_INDICATOR.show();
+				_$form.appendTo("body").submit();
+				_$form.remove();
+			}
+
+		}
+		beneform.BUBBLE_SORT_LIST = function(arr){
+			function bubbleSort(arr) {
+				var i = arr.length,
+				j, tmp;
+				while(i > 0) {
+					for(j = 0; j < i - 1; j++) {
+						if(arr[j].weight < arr[j + 1].weight) {
+							tmp = arr[j];
+							arr[j] = arr[j + 1];
+							arr[j + 1] = tmp;
+						}
+					}
+					i--;
+				}
+				return arr;
+			};
+			return bubbleSort(arr);
+			
+		}
+
+		beneform.GET_VALUE = function(id,name,isEscape) {
+			try {
+				var rst = this.GetValueByForm.setFormId(id).setName(name).value().value;
+				rst.forEach(function(item,index){
+					this[index] = isEscape === false ? item : html2Escape(item);
+				}.bind(rst));
+				return rst.length == 1 ? rst[0] : rst;
+			} catch(e) {
+				beneformLog.warning(e,"Can not get the value that name is " + name + " by form " + id, "beneform.GET_VALUE");
+				return null;
+			}
+		}
+		beneform.CHECK_DATE_VALIDATE = function(date, minDate, maxDate, allowHoliday, holidayArray, allowSatuday, allowSunday)
+		{
+			var y = date.getFullYear();
+			var m = date.getMonth() + 1;
+			var d = date.getDate();
+			if(m < 10)
+				m = '0' + m;
+			if(d < 10)
+				d = '0' + d;
+			var rtDate = y + '' + m + '' + d;
+			if(minDate != null && rtDate < minDate)
+				return false;		
+			if(maxDate != null && rtDate > maxDate)
+				return false;
+			
+			if(date.getDay() == 6 && !allowSatuday)
+				return false;
+				
+			if(date.getDay() == 0 && !allowSunday)
+				return false;
+			
+			if(allowHoliday)
+				return true;
+			else if(!allowHoliday)
+			{
+				if(holidayArray.length==0)
+					return true;
+				if($.inArray(rtDate, holidayArray)!=-1)
+					return false;
+			}
+			return true;
+		}
+		
+		beneform.UPDATE_LANG_JSON = function(oldJson){
+			var newJson =JSON.parse(this.LANGUAGE.langJson);
+			var rstJson = this.extend(true,newJson,oldJson);
+			rstJson = JSON.stringify(rstJson);
+			this.LANGUAGE.langJson = rstJson;
+		}
+		beneform.PERMISSION_DENIED = function(dom){
+			overlay.init("ajaxErrorBox");
+			overlay.AjaxErrorBox.show(this.FIND_LANG_VALUE("error.CE0901"),function() {
+				overlay.AjaxErrorBox.hide();
+			});
+			return false;
+		}
+		beneform.CBSAC_PERMISSION_DENIED = function(dom){
+			overlay.init("ajaxErrorBox");
+			overlay.AjaxErrorBox.show(this.FIND_LANG_VALUE("error.CE0902"),function() {
+				overlay.AjaxErrorBox.hide();
+			});
+			return false;
+		}
+		beneform.LIMIT_AUTHOURITY_FLAG = function(txCode) {
+			if(txCodeArray.length > 0){
+				for(var i=0;i<txCodeArray.length;i++){
+					if(txCode == txCodeArray[i]){
+						return true;
+					}
+				}
+				return false;
+			}
+			return false;
+		}
+		beneform.LIMIT_AMOUNT_INPUT = function() {
+				$(document).on('keypress keyup','.speAmt', function (evt) {
+		        	var $currentTarget = $(evt.currentTarget);
+		            if(/[^0-9\.]/g.test($currentTarget.val())){
+		        		$currentTarget.val($currentTarget.val().replace(/[^0-9\.]/g, ''));
+		        	}
+		            if (evt.which != 8 && !evt.ctrlKey && (evt.which != 46 || $currentTarget.val().indexOf('.') != -1) && (evt.which < 48 || evt.which > 57)) {
+		                evt.preventDefault();
+		            }
+		        });
+		}
+		beneform.escape = function(value){
+			if(this.isString(value))return _.escape(value);
+			return value;
+		}
+		beneform.unescape =  function(value){
+			if(this.isString(value))return _.unescape(value);
+			return value;
+		}
+		beneform.register("traveObj",traveObj);
+		window.beneform = beneform;
+		$.extend({
+			exchangeRateAjax: function(option) {
+				var options = $.extend({
+					data: {
+						"debitCcy": "HKD",
+						"payCcy": "HKD",
+						"debitAmt": "",
+						"debitAc": "",
+						"beneAmt": "",
+						"beneAc": "",
+						"rgnCd": ""
+					},
+					async: true,
+					SuccessCallback: function() {},
+					ErrorCallback: function() {}
+				}, option);
+				var ajaxRequest = new beneform.AjaxRequest(getAjaxUrl.z231, function(returnObj) {
+					if(returnObj.result == "success") {
+						options.SuccessCallback(returnObj)
+					} else {
+						options.ErrorCallback(returnObj)
+					}
+				}, function(returnObj) {
+					options.ErrorCallback(returnObj)
+				});
+				ajaxRequest.appendValue("async", options.async);
+				for(var item in options.data){
+					ajaxRequest.appendValue(item, options.data[item]);
+				}
+				ajaxRequest.appendValue("offBlockUi", true);
+				ajaxRequest.postAjax();
+				return ajaxRequest;
+			},
+			getPayCcyListAjax: function(option) {
+				var options = $.extend({
+					data: {
+						"txCode": "",
+						"regionCode": "",
+						"debitCcyCode": "",
+						"debitCcyFlag": ""
+					},
+					async: true,
+					SuccessCallback: function() {},
+					ErrorCallback: function() {}
+				}, option);
+				var ajaxRequest = new beneform.AjaxRequest(getAjaxUrl.q001, function(returnObj) {
+					if(returnObj.result == "success") {
+						options.SuccessCallback(returnObj)
+					} else {
+						options.ErrorCallback(returnObj)
+					}
+				}, function(returnObj) {
+					options.ErrorCallback(returnObj)
+				});
+				ajaxRequest.appendValue("async", options.async);
+				ajaxRequest.appendValue("txCode", options.data.txCode);
+				ajaxRequest.appendValue("regionCode", options.data.regionCode);
+				ajaxRequest.appendValue("debitCcyCode", options.data.debitCcyCode);
+				if(options.data.debitCcyFlag){
+					ajaxRequest.appendValue("debitCcyFlag", options.data.debitCcyFlag);
+				}
+				ajaxRequest.appendValue("offBlockUi", true);
+				ajaxRequest.postAjax();
+			},
+			getPayPurposeList: function(option) {
+				var options = $.extend({
+					data: {
+						"txCode": "",
+						"regionCode": "",
+						"currencyCode": "",
+						"accountType": "",
+						"acNo": ""
+					},
+					async: true,
+					SuccessCallback: function() {},
+					ErrorCallback: function() {}
+				}, option);
+				var ajaxRequest = new beneform.AjaxRequest(getAjaxUrl.q002, function(returnObj) {
+					if(returnObj.result == "success") {
+						options.SuccessCallback(returnObj)
+					} else {
+						options.ErrorCallback(returnObj)
+					}
+				}, function(returnObj) {
+					options.ErrorCallback(returnObj)
+				});
+				ajaxRequest.appendValue("async", options.async);
+				ajaxRequest.appendValue("txCode", options.data.txCode);
+				ajaxRequest.appendValue("regionCode", options.data.regionCode);
+				ajaxRequest.appendValue("currencyCode", options.data.currencyCode);
+				ajaxRequest.appendValue("accountType", options.data.accountType);
+				ajaxRequest.appendValue("acNo", options.data.acNo);
+				ajaxRequest.appendValue("offBlockUi", true);
+				ajaxRequest.postAjax();
+			},
+			reflashPayBalance: function(option) {
+				var options = $.extend({
+					data: {
+						"acNo": "",
+						"acCur": "",
+						"txCode": "",
+						"region": ""
+					},
+					async: true,
+					SuccessCallback: function() {},
+					ErrorCallback: function() {}
+				}, option);
+				var ajaxRequest = new beneform.AjaxRequest(getAjaxUrl.z250, function(returnObj) {
+					if(returnObj.result == "success") {
+						options.SuccessCallback(returnObj)
+					} else {
+						options.ErrorCallback(returnObj)
+					}
+				}, function(returnObj) {
+					options.ErrorCallback(returnObj)
+				});
+				ajaxRequest.appendValue("async", options.async);
+				ajaxRequest.appendValue("txCode", options.data.txCode);
+				ajaxRequest.appendValue("acNo", options.data.acNo);
+				ajaxRequest.appendValue("acCur", options.data.acCur);
+				ajaxRequest.appendValue("regionCd", options.data.region);
+				ajaxRequest.appendValue("productType", $("#productType").igtbVal());
+				ajaxRequest.appendValue("offBlockUi", true);
+				ajaxRequest.postAjax();
+			},
+			getCutOffTime: function(option) {
+				var options = $.extend({
+					data: {
+						"acNo": "",
+						"prodCd": "",
+						"drCcy": "",
+						"pyCcy": "",
+						"cntrcNo": "",
+						"rateTpList": [],
+						"benRgn": "",
+						"isJet": ""
+					},
+					async: true,
+					SuccessCallback: function() {},
+					ErrorCallback: function() {}
+				}, option);
+				var ajaxRequest = new beneform.AjaxRequest(getAjaxUrl.z234, function(returnObj) {
+					if(returnObj.result == "success") {
+						options.SuccessCallback(returnObj.object);
+					} else {
+						options.ErrorCallback(returnObj);
+					}
+				}, function(returnObj) {
+					options.ErrorCallback(returnObj);
+				});
+				ajaxRequest.appendValue("async", options.async);
+				ajaxRequest.appendValue("acNo", options.data.acNo);
+				ajaxRequest.appendValue("prodCd", options.data.prodCd);
+				ajaxRequest.appendValue("drCcy", options.data.drCcy);
+				ajaxRequest.appendValue("pyCcy", options.data.pyCcy);
+				ajaxRequest.appendValue("cntrcNo", options.data.cntrcNo);
+				ajaxRequest.appendValue("rateTpList", options.data.rateTpList);
+				ajaxRequest.appendValue("benRgn", options.data.benRgn);
+				ajaxRequest.appendValue("isJet", options.data.isJet);
+				ajaxRequest.appendValue("offBlockUi", true);
+				ajaxRequest.postAjax();
+			},
+			getPagingList: function(option) {
+				if(option.loadParDiv && ($(option.loadParDiv).find('.loading').length>0 || (option.loadFlag && !$(option.loadParDiv).find('.load').hasClass('hide')))){
+					return false;
+				}
+				if(option.loadFlag && option.loadParDiv){
+					$(option.loadParDiv).find('.load').removeClass('hide');
+				}
+				var options = $.extend({
+					loadParDiv:"",
+					url: "",
+					data: beneform.GET_MODULE().searchConValue ? beneform.GET_MODULE().searchConValue : {},
+					recKey: "N",
+					offBlockUi: true,
+					loadFlag : true,
+					loadSuccessFun : function(){},
+					changeSuccessFun : function(){},
+					errorCallback: function(returnObj) {
+						var errorMsg = $(returnObj).find('.errorMessage').text();
+						try {
+							beneform.REPORT_SERVER_VALIDATION_MSG(JSON.parse(errorMsg), beneform.FORM_ID);
+						} catch(e) {
+							beneformLog.warning("beneform","getPagingList",e);
+						};
+					},
+				}, option);
+				
+				var ajaxRequest = new beneform.AjaxRequest(options.url, function(returnObj) {
+					if(returnObj.indexOf('id="errorContent"') != -1) {
+						options.errorCallback(returnObj);
+					} else {
+						if(option.loadFlag){
+							options.loadSuccessFun(returnObj);
+						}else{
+							options.changeSuccessFun(returnObj);
+						}
+					}
+					if(options.loadParDiv) $(options.loadParDiv).find('.load').addClass('hide');
+				})
+				if(options.loadFlag) {
+					ajaxRequest.appendValue('isMore', "Y");
+				}else{
+					ajaxRequest.appendValue('loadDOM', options.loadParDiv);
+				}
+				for(var key in options.data) {
+					if(key != "offBlockUi" && key != "loadDOM"){
+						ajaxRequest.appendValue(key, options.data[key]);
+					}
+				}
+				ajaxRequest.appendValue("recKey", options.recKey);
+				ajaxRequest.appendValue("offBlockUi", options.offBlockUi);
+				ajaxRequest.appendValue("async", true);
+				ajaxRequest.postAjax();
+			},
+			getOverlayPagingList: function(option) {
+				var _self = this;
+				var options = $.extend({
+					url: "",
+					overlayId:"",
+					recKey: "N",
+					getPostParaFun : function(){},
+					loadSuccessFun : function(){},
+				}, option);
+				$(option.overlayId + '.popupContentContainer').scroll(function () {
+		        	if (_self.isLoading || _self.isAllLoad || _self.hasNoNextPage) {
+		        		return false;
+		        	};
+		            var element = $(option.overlayId + '.popupContentContainer').get(0);
+		            if(element.scrollHeight!=0||element.clientHeight!=0||element.scrollTop!=0){
+		        		if($(_self.$id + '.resultWrap .loader').length == 0){
+		        			if (element.scrollHeight - element.scrollTop - element.clientHeight <= 1 && element.scrollHeight - element.scrollTop - element.clientHeight >= -1) {
+					            $(_self.$id + "#overlayLoading").removeClass("hiddenLoader");
+					            this.isLoading = true;
+				            	var ajaxRequest = new beneform.AjaxRequest(options.url, function(data){
+				            		options.loadSuccessFun.call(_self,data);
+				            	},function(){
+				            	});
+				            	var postAppend = options.getPostParaFun();
+				       			ajaxRequest.appendValue("offBlockUi",true);
+				       			for(var key in postAppend) {
+									ajaxRequest.appendValue(key, postAppend[key]);
+								}
+								ajaxRequest.appendValue("recKey", options.recKey);
+								ajaxRequest.appendValue("async", true);
+								ajaxRequest.postAjax();
+				            };
+		        		}
+		            }
+		        }.bind(this));
+			},
+			SEND_AJAX: function(url, data, success, error) {
+				if(!error) error = function(err) {};
+				var request;
+				if (data.selectObj) {
+					function selectAjax(opt){
+						var obj = {
+							el: data.selectObj.el,
+							url: url,
+							data: data,
+							success: success,
+							error: error,
+							needOpen: data.selectObj.needOpen,
+							autoLoad: data.selectObj.autoLoad
+						};
+						var selectCallback = data.selectObj.selectCallback;
+						delete obj.data.selectObj;
+						obj.data.async = true;
+						obj.data.offBlockUi = true;
+						$(obj.el+" .select-over").remove();
+						$(obj.el).css("position","relative").prepend('<div class="select-over"><div class="select-loader"></div></div>');
+						var ajaxReturn = true;
+						$(document).off("click",obj.el + " .select-over").on("click",obj.el + " .select-over",function(evt){
+							if (!ajaxReturn) return false;
+							ajaxReturn = false;
+							var target = $(evt.currentTarget);
+							$(obj.el+" .select-loader").show();
+							var label = $(obj.el+" .selectric span.label").igtbText();
+							$(obj.el+" .selectric span.label").text("");
+							request = $.SEND_AJAX(obj.url,obj.data,function(res){
+								$(obj.el+" .selectric span.label").text(label);
+								obj.success(res);
+								var select = $(obj.el+" select");
+								select.selectric('refresh');
+								
+								target.remove();
+								if (obj.needOpen !== false) select.selectric("open");
+								if (typeof selectCallback == "function") selectCallback();
+								ajaxReturn = true;
+							},function(err){
+								$(obj.el+" .selectric span.label").text(label);
+								$(obj.el+" .select-loader").hide();
+								if (typeof obj.error == "function") obj.error(err);
+								ajaxReturn = true;
+							});
+							return false;
+						});
+						if (obj.autoLoad) $(obj.el+" .select-over").trigger("click");
+						setTimeout(function(){
+							$(document).off("click.select").on("click.select",function(){
+								if (request) request.abortAjax();
+							})
+						},300);
+					}
+					selectAjax(data);
+				} else {
+					request = new beneform.AjaxRequest(url, success, error);
+					for(var k in data) {
+						request.appendValue(k, data[k]);
+					}
+					request.postAjax();
+					
+				}
+				return request;
+			},
+			BACK_BTN: function(backFormId, msg) {
+				var msgText = msg ? msg : alertConfirmButton.overlayConfirmBoxMessage;
+				overlay.init(['alert']);
+				$(document).on('click', '.backHoverButton', function(evt) {
+					overlay.AlertConfirmBox.show(
+						msgText, {
+							text: alertConfirmButton.yesBtn,
+							action: function() {
+								$("#" + backFormId).submit();
+							}
+						}, {
+							text: alertConfirmButton.noBtn,
+							action: function() {
+								overlay.AlertConfirmBox.hide();
+							}
+						}
+					);
+				}.bind(this));
+			},
+			GET_INITIAL_LABEL: function(formId) {
+				try {
+					for(var name in beneform.GET_MODULE().data[formId]) {
+						var initialLabel = beneform.GET_MODULE().data[formId][name].label;
+
+						$('#' + formId + ' [data-label]').each(function() {
+							if($(this).data('label').indexOf(name) != -1) {
+								$(this).html(initialLabel);
+							}
+						});
+					}
+				} catch(e) {
+					beneformLog.error("Element that named " + name + " has not label.", "beneform", "GET_INITIAL_LABEL", name, e);
+				}
+			},
+			EXTEND_LANG_LABEL: function(name) {
+				var value = $("[data-label=" + name + "]").eq(0).text();
+				var _obj = {
+					label: {}
+				};
+				_obj.label[name] = value;
+				beneform.GET_MODULE()["lang_" + beneform.LANGUAGE.langFlag] = $.extend(true, {}, beneform.GET_MODULE()["lang_" + beneform.LANGUAGE.langFlag], _obj);
+				beneform.LANGUAGE.language.extendLang(beneform.GET_MODULE()["lang_" + beneform.LANGUAGE.langFlag]);
+			},
+			SUBMIT_BY_MENU: function(href, id1, id2, parameters) {
+				var obj = {
+					'__sys_retryType': 'C',
+					'__sys_req_menuId_lv1': id1,
+					'__sys_req_menuId_lv2': id2
+				};
+				if(parameters) {
+					obj.parameters = parameters;
+				}
+				beneform.SUBMIT_BY_FORM(href, obj);
+			},
+			RESET_INPUTDATE: function(option){
+				var options = $.extend({
+					id: "",
+					date: serverTime.date.replace(/\//g,""),
+					clear: true
+				}, option);
+				if($("#"+options.id).data("daterangepicker")) {
+					$("#"+options.id).data("daterangepicker").hide();
+					$("#"+options.id).data("daterangepicker").setStartDate(options.date);
+					$("#"+options.id).data("daterangepicker").setEndDate(options.date);
+					if(options.clear) { 
+						$("#"+options.id).igtbVal("").blur();
+					}
+				}
+			},
+			AUTH_PERMISSION_JUDGE: function(txCode,successFun,errFun){
+				var ajaxRequest = new beneform.AjaxRequest(authPermission, function(returnObj){
+					if(successFun && $.isFunction(successFun)) successFun(returnObj);
+				},function(returnObj){
+					if(errFun && $.isFunction(errFun)){
+						errFun(returnObj);
+					}else{
+						overlay.init("ajaxErrorBox");
+						overlay.AjaxErrorBox.show(returnObj.message,function() {
+							overlay.AjaxErrorBox.hide();
+						});
+						return false;
+					}
+				});
+				ajaxRequest.appendValue("txCode", txCode);
+				ajaxRequest.appendValue("alertErrorBox", false);
+				ajaxRequest.appendValue("offBlockUi", true);
+				ajaxRequest.postAjax();
+			},
+			OVERLAY_NOT_DATA: function(){
+				return '<div class="overlayNotData">'+
+					       '<p>'+nodataContentMsg+'</p>'+
+					   '</div>';
+			},
+			SCROLL_LOAD_MORE : function(){
+				var isLoad = ($("#root").scrollTop()+$(document).height()-$("#footer").height() >= $("#container").height()+$("#header").height()-1);
+				return isLoad;
+			},
+			CN_AUTO_FOCUS : function(input1,callback) {
+				var flag = true;
+				$(input1).on("compositionstart",function(){
+					flag = false;
+				}).on("compositionend",function(evt){
+					flag = true;
+					callback(evt);
+				}).on("input propertychange",function(evt){
+					if (!flag) return;
+					callback(evt);
+				});
+			}
+		});
+		beneform.holidayMap = {};
+		beneform.getHolidayMap= function(bankCode) {
+			var ajaxRequest = new beneform.AjaxRequest(holidayUrl, function(jsonData) {
+				if(jsonData.result == "success") {
+					return jsonData;
+				} else {
+					return [];
+				}
+			});
+			ajaxRequest.appendValue("bankCode", bankCode);
+			ajaxRequest.appendValue("offBlockUi", true);
+			ajaxRequest.appendValue("async", false);
+			var retObj = ajaxRequest.postAjax().object;
+			return retObj;
+		};
+		return beneform;
+	});

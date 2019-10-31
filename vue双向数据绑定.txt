@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<script src="jquery3.4.1.js"></script>
+<style>
+input{
+    width: 400px;
+    height: 50px;
+    border: 1px solid #ccc;
+}
+</style>
+<body>
+    <h1>这里是name</h1>
+    <input class="name" type="text" >
+    <input class="name" type="text">
+    <h1>这里是age</h1>
+    <input class="age" type="text">
+    <input class="age" type="text">
+    <input class="age" type="text">
+    <h1>这里是sex</h1>
+    <input class="sex" type="text">
+    <input class="sex" type="text">
+    <input class="sex" type="text">
+    <input class="sex" type="text">
+    <h1>这里是school</h1>
+    <input class="school" type="text">
+    <input class="school" type="text">
+    <input class="school" type="text">
+    <input class="school" type="text">
+    <input class="school" type="text">
+    <script>
+        var data = {
+            "name" : "lishibo",
+            "age" : 24,
+            "sex" : "man",
+            "school" : "HuBeiLiGong"
+        }
+        // 绑定data中的数据，设定setter和getter方法
+        function getData(data){
+            for(var index in data){
+                setData(data,index,data[index])
+            }
+        }
+
+        function setData(obj,name,val){
+            var dep = new Dep();
+            Object.defineProperty(obj,name,{
+                get(){
+                    dep.addSub(Dep.target);
+                    console.log(val);
+                    return val;
+                },
+                set(newValue){
+                    console.log(newValue,val)
+                    val = newValue;
+                    dep.notify();
+                }
+            })
+        }
+        getData(data);
+
+        // 设置一个消息订阅器，用来集合管理所有的订阅者
+
+        function Dep(){
+
+        }
+        Dep.prototype.subs = [];
+        Dep.prototype.notify = function(){
+            this.subs.forEach((sub)=>{
+                sub.update();
+            })
+        }
+        Dep.prototype.addSub = function(target){
+            if(target){
+                this.subs.push(target);
+            }else{
+
+            }
+        }
+        Dep.prototype.target = null;
+
+        // 绑定所有的订阅者，并附带更新方法
+
+        function Watcher(vm,exp,cb){//vm为vue的实例对象(此处我传入data)，exp为绑定的值，假如v-model中绑定的是name属性，那此时exp就是name，cb为处理更新的函数。
+            this.vm = vm;
+            this.exp = exp;
+            this.cb = cb;
+            this.value = this.get();
+        }
+        Watcher.prototype.get = function(){
+            Dep.target = this;
+            var value = this.vm.data[this.exp];
+            Dep.target = null;
+            return value;
+        }
+        Watcher.prototype.update = function(){
+            if(this.value !== this.vm.data[this.exp]){
+                this.value = this.vm.data[this.exp];
+                this.refreshView(this.cb);
+            }
+        }
+        Watcher.prototype.refreshView = function(data){
+            // debugger
+            for(var i = 0 ; i < data.length ; i++){
+                data[i].value = this.value;
+            }
+            // data.forEach(function(item){
+            //     item.value = this.value;
+            // })
+        }
+        for(var index in data){
+            if(document.getElementsByClassName(index)){
+                new Watcher(this,index,document.getElementsByClassName(index))
+            }
+        }
+
+
+        
+    </script>
+</body>
+</html>

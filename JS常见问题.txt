@@ -1,0 +1,291 @@
+一.JS中几种循环的用法和比较
+	
+	a. for-in 循环 : 语句用于遍历数组或者对象的属性（对数组或者对象的属性进行循环操作）for-in循环主要用来循环对象，取到的值是下标key，获取当前属性的值需要用obj[key]来获取。
+
+	//声明一个Peson类
+function Person(){
+    this.name = "张三";
+    this.age = 14;
+    this.func1 = function(){
+        
+    }
+}
+//实例化这个类
+var zhangsan = new Person();
+//使用for-in遍历这个对象
+for(keys in zhangsan){
+    console.log(zhangsan[keys])
+}
+
+输出 ：张三    14    f()
+
+
+	b . for-of  :  for-of是ES新增的循环， for-of 可以循环字符串、数组以及类数组对象(比如选中的dom对象、函数参数的arguments对象)，但是不能循环正常对象。
+
+	      // 字符串
+        var str = "hello";
+        
+        for (let s of str) {
+          console.log(s); // h e l l o
+        }
+        
+        // DOM NodeList对象
+        let paras = document.querySelectorAll("p");
+        
+        for (let p of paras) {
+          p.classList.add("test");
+        }
+        
+        // arguments对象
+        function printArgs() {
+          for (let x of arguments) {
+            console.log(x);
+          }
+        }
+        printArgs('a', 'b');// 'a' 'b'
+
+	
+	c. forEach :  forEach是用来循环数组的，forEach的回调中有三个参数，分别为数组当前值value 、 数组下标 index 、当前数组。其中第一个参数是必须的，其余两个参数可有可无。(forEach只能循环数组，不能循环类数组对象，比如dom对象不能被循环document.querySelectorAll("p");)
+	
+	let arr = [1,2,3];
+arr.forEach(function(value,index，arr){
+ console.log(value,index，arr)
+})
+// 1 0 [1,2,3]
+// 2 1 [1,2,3]
+// 3 2 [1,2,3]
+
+	d . map : map主要是用来循环数组，不能用来循环普通对象，原生的类数组对象也不能循环（document.querySelectorAll(“p”)），但是可以循环jquery对象（$(“.name”)）。
+
+	map的用法：当map循环的是数组时，跟forEach用法一样。
+	arr.map((value,index,arr)=>{
+		console.log(value, index,arr)
+	})
+	当map循环的是jquery对象时，用法如下(只有两个参数，$(item)可以获取到当前jquery对象)
+	$(“li”).map((index,item)=>{
+		console.log(index,$(item));
+	})
+
+二、HTML、CSS、JS在页面中的加载顺序。
+
+	CSS和JS都是嵌套在HTML页面中的,而HTML页面是按照顺序加载的，页面会从head开始解析，并下载相应的资源，在加载过程中，资源下载是异步的。当碰到script标签时，浏览器将控制权交给JavaScript引擎，此时页面停止渲染。解析完后浏览器将控制权又交给浏览器渲染引擎。（这个只是针对原生的页面，在框架中并不实用。）
+
+三、基本类型与引用类型。
+
+	1.JavaScript中的变量类型有哪些？
+
+	（1）值类型（基本类型）：字符串（string）、数值（number）、布尔值（boolean）、undefined、null  （这5种基本数据类型是按值访问的，因为可以操作保存在变量中的实际的值）(ECMAScript 2016新增了一种基本数据类型：symbol http://es6.ruanyifeng.com/#docs/symbol )
+
+	（2）引用类型：对象（Object）、数组（Array）、函数（Function）
+
+ 
+
+	2.值类型和引用类型的区别
+
+	（1）值类型：1、占用空间固定，保存在栈中（当一个方法执行时，每个方法都会建立自己的内存栈，在这个方法内定义的变量将会逐个放入这块栈内存里，随着方法的执行结束，这个方法的内存栈也将自然销毁了。因此，所有在方法中定义的变量都是放在栈内存中的；栈中存储的是基础变量以及一些对象的引用变量，基础变量的值是存储在栈中，而引用变量存储在栈中的是指向堆中的数组或者对象的地址，这就是为何修改引用类型总会影响到其他指向这个地址的引用变量。）
+
+          2、保存与复制的是值本身
+
+          3、使用typeof检测数据的类型
+
+          4、基本类型数据是值类型
+
+	（2）引用类型：1、占用空间不固定，保存在堆中（当我们在程序中创建一个对象时，这个对象将被保存到运行时数据区中，以便反复利用（因为对象的创建成本通常较大），这个运行时数据区就是堆内存。堆内存中的对象不会随方法的结束而销毁，即使方法结束后，这个对象还可能被另一个引用变量所引用（方法的参数传递时很常见），则这个对象依然不会被销毁，只有当一个对象没有任何引用变量引用它时，系统的垃圾回收机制才会在核实的时候回收它。）
+
+           2、保存与复制的是指向对象的一个指针
+
+           3、使用instanceof检测数据类型
+
+           4、使用new()方法构造出的对象是引用型
+
+	重点（基本类型的基础变量被储存在栈中，值也储存在栈中，当进行比较时，比较的是值。引用类型的引用变量也储存在栈中，但是值是一个地址，指向堆内存中的对象）。
+
+四、call和apply的用法。
+
+	call和apply方法都是改变this的指向问题。只是传递的参数不同，如下。
+	function add(c,d){
+        	return this.a + this.b + c + d;
+    	}
+
+    	var s = {a:1, b:2};
+    	console.log(add.call(s,3,4)); // 1+2+3+4 = 10
+    	console.log(add.apply(s,[5,6])); // 1+2+5+6 = 14 
+
+	当传递的参数是对象s时，此时运行add()函数，this就是指向s对象的。
+
+五、window中常用的处理函数split、splice、slice。
+
+	split是用来处理字符串的，split中参数是打散字符串的规则，如下意思为碰到str中有逗号时就拆开，显然返回的数组只有一项。
+	var str = “sdf”； str.split(',') 
+	splice是用来处理数组的。splice会改变原来的数组，返回的值为被删除的部分项。
+	var arr = [11,22,33,44,55];  var arr1 = arr.splice(1,2,12);
+	slice既可以处理字符串，又可以处理数组。
+	var str = 'sadfasf';   str.slice(1,3);
+	join是用来处理数组，按照指定规则把数组变为字符串，如果传递的参数为空时，将返回不带逗号的字符串。
+	var arr = [1111,2222,3333,4444]; arr.join("");
+
+	(重点：上面的方法中，只有splice会改变调用对象，其余方法都不会改变原来的值。)
+
+六、window中对象的使用。
+	
+	window中的常用对象有location setInterval setTimeout innerHeight localStorage等
+
+	1、location是一个获取地址栏地址的对象
+		window.location.href:获取地址栏中的完整地址。
+		window.location.protocol:获取URL的协议
+		window.location.host:获取当前URL的主机名（域名）和端口号
+		window.location.port:获取当前URL的端口号
+		window.location.hostname:获取当前URL的主机名（域名）
+		window.location.pathname:获取URL中的文件路径，就是当前页面的路径。
+		window.location.search:获取URL中的参数
+	2、cookie  session  localStorage  sessionStorage等的用法和比较。
+		cookie是服务器发送给客服端的特殊信息，存储在客服端，比如用户登陆时，后端会保存用户登陆信息，返回信息存储在cookie中。 cookie可以设置保留时间，如果没有设置保留时间，则关闭浏览器就会失效。每次发送请求都会带上cookie信息。cookie的存储容量小，且每次发送请求时都会携带发送cookie，因此H5新特性中的Web Storage很好的解决了这个问题。
+		localStorage是将需要保存的信息存储在本地的硬件设备上，且属于永久存储，关闭浏览器数据不会被清除，只有主动删除才会失效。存储的大小为5MB左右。localStoragese：常用于长期登录（+判断用户是否已登录），适合长期保存在本地的数据（项目中用到过，新生开卡功能，流程比较复杂，有几个页面需要填写信息，为了方便用户，如果用户填写了几个页面信息，但没填写完，突然有事电脑关了，下次进入开卡时，会提示你是否继续申请开卡。这个功能就是用localStorage实现的。在第一次提交主页信息时，利用localStorage保存了一个后台返回的token码，跟电话号码一一对应。当下次进入开卡主页时，用localStorage.getItem("token"),如果存在token码，就会走另外一套逻辑，用token码call后台接口，返回上次提交的数据，然后渲染在页面上。)
+		sessionStorage存储的数据只在当前浏览器窗口有效，关闭浏览器窗口会被销毁，存储大小为5MB。sessionStorage：敏感账号一次性登录；
+
+七、promise的用法。
+
+	 promise是解决异步回调问题的，如下。promise是个构造函数，接受一个函数作为参数，该函数有两个参数，分别为成功回调和失败回调。当执行完Promise（）中的函数时，会继续执行js中的代码，以下执行输出为。(注意promise里面的代码是同步的)
+
+	a  c  b  1
+
+	 new Promise((resolve, reject) => {
+      		console.log('a');
+      		setTimeout(() => {
+        		resolve(1);
+      		}, 10);
+    	 }).then((data) => {
+      		console.log('b');
+      		console.log(data);
+         )
+	 console.log('c');
+
+八、对OOP的理解。（面向对象的好处：代码整洁井然有序，便于后期维护）
+
+	我上一段工作经历就是面向对象编程的。面向对象编程与面向过程编程之间的差别，面向过程编程是流程化的，一步一步分析问题，一步一步实现问题，而面向对象编程是抽象化的，抽象一个类，里面有解决问题的方法和数据，需要实现什么功能直接调用就可以了。面向对象有三大特性。第一个特性封装：隐藏对象的属性和实现细节，对外提供访问方式，提高代码的复用率和可维护性。像我提供的上传的方法，只提供一个接口，说明使用方法，不需要别人知道怎么实现的。第二个特新继承：继承是指可以让某个类型的对象获得另一个类型的对象的属性和方法，我们这个项目是在当前页面js中使用call()方法来继承框架的类里面的方法，然后用$.extend来继承框架类中原型上的方法和属性。多态就是不同对象调用同一方法可以产生不同的效果,比如子对象重写一个跟父对象相同的方法，这个很少用到，跟多态容易搞混的重载在项目中到是用的多，根据所传参数个数不同执行不同的操作。
+1.谈谈你对OOP的理解？
+OOP是面向对象编程，特征分别是封装、继承、多态、抽象。
+封装：封装是指将对象信息状态通过访问权限修饰符隐藏在对象内部，不允许外部程序直接访问，如果外部程序要访问对象内部，可以调用内部提供的get或set方法。简单来说，封装就是要找出某一类事务的公性然后提取出来。
+继承：子类继承了父类所有的成员方法和属性，并且可以拥有自己特性。继承解决了代码的重用问题
+多态：多态存在的三个条件1.继承2.重写3.父类引用指向子类对象
+多态的实现方式1.接口实现，继承父类方法重写，同一个类中进行重载
+重载：多个同名函数同时存在，具有不同的参数个数/类型，返回值类型可以相同可
+以不同，调用方法时通过传递给它们的不同参数个数和参数类型来决定具体使用哪个方法, 这就是多态性，存在于父类和子类、同类中
+重写：1.参数列表必须完全与被重写的方法相同
+2.返回的类型必须一直与被重写的方法的返回类型相同
+3.访问修饰符的限制一定要大于被重写方法的访问修饰符
+4.重写方法一定不能抛出新的检查异常或者比被重写方法申明更加宽泛的检查型异常
+5.存在于父类和子类之间，方法被定义为final不能被重写。
+抽象：如果一个类含有抽象方法，则称这个类为抽象类，抽象类必须在类前用abstract关键字修饰。因为抽象类中含有无具体实现的方法，所以不能用抽象类创建对象。
+抽象方法必须为public或者protected（因为如果为private，则不能被子类继承，子类便无法实现该方法），缺省情况下默认为public。
+
+
+九、介绍一下必包。
+	
+	一般来说，函数作用域中的变量在函数外部是无法访问的，闭包可以理解为读取其它函数作用域中变量的函数，闭包可以将函数内部和函数外部连接起来。闭包的优点，可以读取函数内部的变量。
+
+十、原型和原型链。
+	
+	每个函数都自带一个prototype属性，prototype属性指向一个对象，就是原型对象。每个对象自带一个__proto__属性，一般情况来说，这个__proto__属性指向生成当前实例的类的原型。当我们访问对象的一个属性时，它会先在自身中寻找，如果有则直接使用，如果没有就到__proto__所指的原型中找，如果原型中有则直接使用，如果没有就到原型的原型中寻找，直到找到Object对象的原型为止，Object的原型就是原型链的顶端。如创建一个构造函数Person，let一个变量people等于new Person，那么实例people中就有一个__proto__属性指向生成这个对象的类的原型，也就是构造函数的原型（在构造函数内部可以定义一些属性，这些属性会在实例化时保存在每个实例内部，比如Person中定义age和name等，可以在new时传入参数来实现各个实例产生不同的属性值，构造函数prototype属性指向的原型对象里面可以定义一些方法，这些方法是所有实例公用的，也就是实例__proto__所指向的对象。），普通函数的原型都是系统自动生成的‘object’类型的对象，竟然是对象，它里面同样有一个属性__proto__指向Object函数的原型，而Object函数的原型中__proto__属性是null，也就是原型链的顶端。	
+
+十一、sort排序函数的原理和使用方法。
+
+	sort函数是对数组进行排序，依次取数组中的两个元素进行比较，就像冒泡排序样，sort函数接受一个回调函数作为参数，如果回调函数返回的值大于0，则a排到b的后面（大于0则a，b调换位置），如果回调函数的值等于0，则不换位置，如果回调函数的值小于0，则b排到a的后面（小于0则a，b位置不变）。
+
+	arr=[10,5,8,20,1000,2];
+	arr.sort((a,b)=>{return a-b;}) 升序
+	arr.sort((a,b)=>{return b-a;}) 降序
+
+十二、冒泡排序。
+
+function setSort(arr) {
+    let i = arr.length, j = 0;
+    while (i > 1) {
+      for (j = 0; j < i - 1; j++) {
+        if (arr[j] > arr[j + 1]) {
+          const tem = arr[j];
+          arr[j] = arr[j + 1];
+          arr[j + 1] = tem;
+        }
+      }
+      i--;
+    }
+ }
+var arr=[10,6,20,5,1000,1];
+setSort(arr);
+
+冒泡的优化，当序列正确时，排序任然会进行下一轮，因此可以设置一个flag判断，当序列正确时，不在排序，如下。
+function setSort(arr) {
+    let i = arr.length, j = 0,flag;
+    while (i > 1) {
+	flag = false;
+      for (j = 0; j < i - 1; j++) {
+        if (arr[j] > arr[j + 1]) {
+          const tem = arr[j];
+          arr[j] = arr[j + 1];
+          arr[j + 1] = tem;
+	  flag = true;
+        }
+      }
+      i--;
+      if(!flag) break;
+    }
+ }
+var arr=[10,6,20,5,1000,1];
+setSort(arr);
+
+冒泡还可以进一步优化，当后面一部分序列已经正确时，就没必要进一步比较后面那些序列了，可以记录有序数列的下标，下次比较只需要比较到此位置为止。
+
+function setSort(arr) {
+    let i = arr.length, j = 0,flag;
+    Let lastIndex = i-1;
+    while (i > 1) {
+	flag = false;
+      for (j = 0; j < lastIndex; j++) {
+        if (arr[j] > arr[j + 1]) {
+          const tem = arr[j];
+          arr[j] = arr[j + 1];
+          arr[j + 1] = tem;
+	  flag = true;
+	  lastIndex = j;
+        }
+      }
+      i--;
+      if(!flag) break;
+    }
+ }
+var arr=[10,6,20,5,1000,1];
+setSort(arr);
+
+十三、选择排序
+选择排序是取出下标为i的元素和后面的所有元素进行比较，如果第i个元素大于后面的元素就对换位置，这样经过第一轮排序，最小的元素就到最前面了
+function chooseSort(arr) {
+    for (let i = 0; i < arr.length - 1; i++) {
+      for (let j = i + 1; j < arr.length; j++) {
+        if (arr[i] > arr[j]) {
+          const tem = arr[i];
+          arr[i] = arr[j];
+          arr[j] = tem;
+        }
+      }
+    }
+  }
+十四、快速排序
+quickSort(arr) {
+    if (arr.length <= 1) {
+      return arr;
+    }
+    const centerIndex = Math.floor(arr.length / 2);
+    const left = [];
+    const right = [];
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] >= arr[centerIndex] && i !== centerIndex) {
+        right.push(arr[i]);
+      }
+      if (arr[i] < arr[centerIndex] && i !== centerIndex) {
+        left.push(arr[i]);
+      }
+    }
+    return this.quickSort(left).concat(arr[centerIndex]).concat(this.quickSort(right));
+  }
+	

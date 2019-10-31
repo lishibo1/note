@@ -1,0 +1,30 @@
+解决异步的问题。
+1.利用回调解决异步问题
+
+	如：如何输出主调函数中的name？
+		function  main(fun){
+			setTimeout(()=>{
+				var name = “lishibo”;
+				fun(name);
+			},1000)
+		}
+		
+	调用main方法时传入一个函数。
+		main((data)=>{
+			console.log(data);
+		})
+
+2.通过promise解决异步问题
+
+function main(){
+	return new Promise((resolve)=>{
+		setTimeout(()=>{
+         		 var name = "lishibo";
+         		 resolve(name);
+        	},1000)
+	})
+  }
+  
+  main().then((data)=>{
+	console.log(data);
+  })

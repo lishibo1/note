@@ -1,0 +1,5 @@
+1.父组件给子组件传值可以直接把this传给子组件，这样在子组件中就相当于获得了父组件的实例。
+	如从home页面传值this给header组件
+	<header [$this] = “this”></header>
+	在子组件中获取传递过来的this
+	@input() $this:any;

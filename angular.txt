@@ -1,0 +1,56 @@
+重点：angular中的常用语法
+{
+	所有click方法：(click)="function()"记得要加括号
+	所有动态绑定的属性值：[name] = "data.name"
+	ngClass的用法： [ngClass] = "{'addColor':data.color,'addSize':data.size}"表示是否渲染addColor和addSize两个类，如果其值为true则渲染。
+	ngStyle的用法:  [ngStyle] = "{'background-color': data.color ? 'red' : 'yellow'}"还可以使用函数判断：[ngStyle] = "{'display': getDisplay()}"
+	ngIf的用法：*ngIf="isTrue" 为true则渲染该元素
+	ngFor的用法：*ngFor="let item of items"
+	ngShow: angular2之后ngShow就没了，改成了hidden，表示是否隐藏，值为true时隐藏，值为false时显示。 [hidden] = "isTrue"
+	
+}
+
+
+1.MVVM和MVC的区别
+
+      （MVVM是一种开发模式）
+	MVVM中的M指model模型，V指视图，VM指视图模型，VM是MVVM模式的核心，是链接view和model的桥梁。它有两个方向：一是将模型（Model）转化成视图(View)，即将后端传递的数据转化成所看到的页面。实现的方式是：数据绑定。二是将视图(View)转化成模型(Model)，即将所看到的页面转化成后端的数据。实现的方式是：DOM 事件监听。这两个方向都实现的，我们称之为数据的双向绑定。总结：在MVVM的框架下视图和模型是不能直接通信的。它们通过ViewModel来通信，ViewModel通常要实现一个observer观察者，当数据发生变化，ViewModel能够监听到数据的这种变化，然后通知到对应的视图做自动更新，而当用户操作视图，ViewModel也能监听到视图的变化，然后通知数据做改动，这实际上就实现了数据的双向绑定。并且MVVM中的View 和 ViewModel可以互相通信。MVVM流程图如下：
+
+2.angular中生命周期钩子函数。（重点：ngDoCheck、ngAfterContentChecked、ngAfterViewChecked这三个钩子函数在异步完成之后会被调用，而且奇怪的是有时候鼠标移动也会触发这些钩子函数）
+
+	angular生命周期钩子函数有八个，constructor是构造函数，不属于钩子函数，它在所有钩子函数之前运行，constructor构造函数的作用主要是依赖注入，也可以用来执行简单的数据初始化。
+
+	八个钩子函数分别为：ngOnChanges , ngOnInit , ngDoCheck , ngAfterContentInit , ngAfterContentChecked , ngAfterViewInit , ngAfterViewChecked , ngOnDestory。
+
+	ngOnChanges在数据绑定输入属性值发生变化时调用，比较常用在父组件给子组件传值发生改变时会调用。它的调用在ngOnInit之前。
+	ngOnInit只会调用一次，在组件初始化时调用，在constructor中只执行简单的数据初始化，而复杂的数据初始化一般可以在这里执行。
+	ngDoCheck在第一次进入页面时会调用一次，后续浏览器中发生的任何异步事件都会触发变更检测机制（点击按钮，输入数据，数据从服务器返回）,另外外部插件的引入可能导致鼠标在页面上移动时也会触发，所以这个方法调用时要尽量保证代码效率高，要不然会影响性能。
+	ngAfterContentInit只调用一次，当把内容投影进组件之后调用。
+	ngAfterContentChecked在第一次进入页面时会调用，后续每次输入属性发生变化时也会被调用。
+	ngAfterViewInit只调用一次，初始化完组件视图及其子视图之后调用。
+	ngAfterViewChecked在第一次进入页面时会调用，后续每次输入属性发生变化时也会被调用。
+	ngOnDestory组件销毁前调用，主要作用是在组件销毁之前，执行一些清理操作，如：移除事件监听、清理定时器等。注销全局服务中的函数，避免内存泄漏。
+	（http请求可以放在ngOnInit中)
+
+3.双向数据绑定的原理。
+
+	angular双向数据绑定指的是当model中的数据发生变化时，会更新相应的view视图，同样当view视图发生变化时，会更新model中的数据。实现双向数据绑定是因为angular中设置了一个监听列队，每当在view中绑定了东西时，例如用双花括号绑定或者ngModel等绑定，angular就会往循队列中添加相应的$watch，用来监听model的变化, 每当model中的数据发生变化时，就会触发一个$digest循环，这个循环将遍历所有的$watch,当$watch发生变化时，就会通知修改相应的view视图，
+
+4.angular中引用插件的方法。
+	
+	第一步：使用npm下载依赖包，此时会自动在package.json中配置下载的版本，且还需下载对应的ts包。
+	第二步：在angular.json中配置对应的css和js。
+	第三步：在需要使用插件的页面declare插件，就可以使用了。
+
+5.angular中解决跨域常用的方法（angular6以上的版本）。
+	
+	a.使用jsonp解决跨域问题。
+		在appModule里面引入jsonp的模块，然后创建一个服务，在服务中写一个公共方法，this.http.jsonp(url,"callback").subscribe((data)=>{})就可以拿到数据。（缺点：只能支持get请求）
+
+	b.设置跨域头解决跨域问题。
+		在nodejs中配置跨域头，假如前端请求页面端口是4200，就配置允许4200端口发送的请求。
+
+	c.请求代理解决跨域问题。
+		在根目录下创建一个json文件，配置请求的域名，然后在angular.json文件中的serve处配置刚建的json文件。创建公共服务后就可以使用。
+
+		

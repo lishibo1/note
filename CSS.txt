@@ -1,0 +1,90 @@
+一. 在div中，两个行内元素设置宽度为百分之五十时，会被挤到下一行。原因和解决方案。
+
+	被挤下去是因为行内元素间存在一个空格。解决的方法有很多种。
+	第一：可以让标签一行排列，中间不留间隙。 如：<img src="" alt=""><img src="" alt="">
+	
+	第二：可以给父元素设置一个font-size为0，中间的空白就没了。
+	
+二、媒体查询。
+
+	媒体查询是根据媒体设备的不同显示不同的样式。
+	如
+	@media screen and (max-width: 1080px) and (min-width: 480px){
+		.ads{
+			display: none;
+		}
+	}
+	值设备为屏幕，且屏幕宽度大于或者等于480px，小于或者等于1080px时，样式生效。
+
+三、怎么解决垂直居中问题。
+
+	1、当行内元素需要居中时，可以给父元素设置一个line-height。
+	<div style="width: 600px; height: 600px; line-height: 600px;">
+    		<span>fdsdfdsa</span>
+  	</div>
+	2、当父容器里面的子容器需要垂直方向居中时，可以给父容器设置成弹性布局。
+	<div style="width: 600px; height: 600px;display: flex;justify-content: space-between;align-items: center">
+    		<div>11</div>
+    		<div>22</div>
+  	</div>
+	3、当子元素为块级元素时，给父元素设置相对定位，子元素设置决定定位。如下
+	<div style="width: 600px; height: 600px;position: relative;">
+    		<div style="position:absolute;top:50%;transform: translateY(-50%);">11</div>
+  	</div>
+
+四、定位的四种用法。
+
+	position可取四个值。static（静态定位）、relative、absolute、fixed
+	static：position的默认值就是static，不脱离文档流,无法使用top、bottom、left等。(不可使用z-index)
+	relative：相对定位是相对于自身定位，不脱离文档流，而且占据的文档空间不会随着top、left等属性偏移而发生变动。(可使用z-index)
+	absolute：绝对定位脱离文档流，是相对于自己最近的祖先非static定位元素来定位。
+	fixed：相对于浏览器窗口定位。
+	
+五、清除浮动的方法。（为什么需要清除浮动，当父元素里面的子元素浮动时，如果父元素的高度和宽度没有设置，由子元素撑开，那么父元素高度将为0，因为浮动的元素会脱离文档流，不会撑开父元素，因此不清除浮动将会影响页面的布局。清除的方法是在父元素的最后面添加一个子元素，给子元素设置属性，clear:both）
+
+	 <div class="parent">
+      		<div class="first">第一个元素</div>
+     		<div class="second">第二个元素</div>
+      		<div class="three"></div>
+    	 </div>
+	在最后一个元素上设置属性 ： clear : both;
+
+六、如何保持浮层水平垂直居中。
+
+	<div class="parent">
+    		<div class="children">
+
+    		</div>
+	</div>
+	a.父元素设置弹性布局。(弹性布局中，属性flex-flow是flex-direction和flex-wrap的缩写。flex-flow:row wrap;表示弹性布局按照行排列，且自动换行)
+		justify-content:space-around;(space-around是均匀铺开但是最边上的两个元素距离只有一半，sapce-between左右两边的元素贴着父元素，其余元素均匀铺开)
+　		align-items:center;
+　		display: flex;
+	b.父元素相对定位，子元素绝对定位。（子元素属性如下）
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%,-50%);
+
+七、em、rem适配。
+
+	这两个单位都是自适配单位。rem的用法，是根据跟元素html字体大小来适配的，当给跟元素html设置字体大小为16px时，1rem就等于16px。em的用法，em是相对于当前元素字体大小来适配的，当前元素字体大小为20px，则1em就等于20px，由于页面元素属性有继承效果，如果当前元素字体大小没有设置，那当前元素字体大小会继承自父元素（假如父元素字体大小为30px），则1em等于30px；
+	
+八、css盒子模型。
+
+	在浏览器中，元素可以看做是一个盒子，但是当你给元素设置width和height时，并不是当前元素所占用的位置和设置的宽高一样大，而是当前元素的内容区所占用的区域大小，当前元素所占据的位置 = width + padding + border + margin。当把元素设置border-sising: border-box时，给元素设置width和height时，是包括边框在内的面积，只不包括margin。（注意：当给元素设置背景颜色时，padding也会变色，边框不会变，margin不会变）
+
+九、什么是伪类、伪元素。
+
+	伪类指的不存在的类，伪类主要作用可以用来选择元素和提供一些状态属性，伪类用:单冒号表示。
+	p:first-child	(选择子元素中第一个元素)
+	p:first-of-type	(选择子元素中，所有p元素的第一个p元素)
+	p:nth-child(n)	(选择子元素中第n个p元素,特别注意不是第n+1个元素)
+	p:nth-of-type(n)   (选择子元素中，所有p元素的第n个p元素)
+	input:checked  (选择单选框或者复选框被选中的元素)
+	p:hover	 （当鼠标悬停在当前元素上时添加样式）
+
+
+	伪元素指实际文档中没有的元素，伪元素用::双冒号表示，
+	
+		
