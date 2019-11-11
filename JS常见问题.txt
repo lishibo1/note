@@ -138,7 +138,7 @@ arr.forEach(function(value,index，arr){
 		window.location.hostname:获取当前URL的主机名（域名）
 		window.location.pathname:获取URL中的文件路径，就是当前页面的路径。
 		window.location.search:获取URL中的参数
-	2、cookie  session  localStorage  sessionStorage等的用法和比较。
+	2、cookie  session  localStorage  sessionStorage等的用法和比较。(localStorage和sessionStorage保存数据都是保存在本地浏览器中，而且保存的数据是保存在当前浏览器域名下。)
 		cookie是服务器发送给客服端的特殊信息，存储在客服端，比如用户登陆时，后端会保存用户登陆信息，返回信息存储在cookie中。 cookie可以设置保留时间，如果没有设置保留时间，则关闭浏览器就会失效。每次发送请求都会带上cookie信息。cookie的存储容量小，且每次发送请求时都会携带发送cookie，因此H5新特性中的Web Storage很好的解决了这个问题。
 		localStorage是将需要保存的信息存储在本地的硬件设备上，且属于永久存储，关闭浏览器数据不会被清除，只有主动删除才会失效。存储的大小为5MB左右。localStoragese：常用于长期登录（+判断用户是否已登录），适合长期保存在本地的数据（项目中用到过，新生开卡功能，流程比较复杂，有几个页面需要填写信息，为了方便用户，如果用户填写了几个页面信息，但没填写完，突然有事电脑关了，下次进入开卡时，会提示你是否继续申请开卡。这个功能就是用localStorage实现的。在第一次提交主页信息时，利用localStorage保存了一个后台返回的token码，跟电话号码一一对应。当下次进入开卡主页时，用localStorage.getItem("token"),如果存在token码，就会走另外一套逻辑，用token码call后台接口，返回上次提交的数据，然后渲染在页面上。)
 		sessionStorage存储的数据只在当前浏览器窗口有效，关闭浏览器窗口会被销毁，存储大小为5MB。sessionStorage：敏感账号一次性登录；
@@ -184,7 +184,7 @@ OOP是面向对象编程，特征分别是封装、继承、多态、抽象。
 	
 	一般来说，函数作用域中的变量在函数外部是无法访问的，闭包可以理解为读取其它函数作用域中变量的函数，闭包可以将函数内部和函数外部连接起来。闭包的优点，可以读取函数内部的变量。
 
-十、原型和原型链。
+十、原型和原型链。(Function函数是由Function函数生成的，所以Function函数对象的__proto__指向Function.prototype。JavaScript规定Object.prototype为原型链的顶端，Object.prototype.__proto__ =  null。JavaScript规定，Function.prototype.__proto__指向Object的原型。)
 	
 	每个函数都自带一个prototype属性，prototype属性指向一个对象，就是原型对象。每个对象自带一个__proto__属性，一般情况来说，这个__proto__属性指向生成当前实例的类的原型。当我们访问对象的一个属性时，它会先在自身中寻找，如果有则直接使用，如果没有就到__proto__所指的原型中找，如果原型中有则直接使用，如果没有就到原型的原型中寻找，直到找到Object对象的原型为止，Object的原型就是原型链的顶端。如创建一个构造函数Person，let一个变量people等于new Person，那么实例people中就有一个__proto__属性指向生成这个对象的类的原型，也就是构造函数的原型（在构造函数内部可以定义一些属性，这些属性会在实例化时保存在每个实例内部，比如Person中定义age和name等，可以在new时传入参数来实现各个实例产生不同的属性值，构造函数prototype属性指向的原型对象里面可以定义一些方法，这些方法是所有实例公用的，也就是实例__proto__所指向的对象。），普通函数的原型都是系统自动生成的‘object’类型的对象，竟然是对象，它里面同样有一个属性__proto__指向Object函数的原型，而Object函数的原型中__proto__属性是null，也就是原型链的顶端。	
 
@@ -288,4 +288,7 @@ quickSort(arr) {
     }
     return this.quickSort(left).concat(arr[centerIndex]).concat(this.quickSort(right));
   }
+
+十五、事件的冒泡
+十六、事件代理
 	

@@ -34,7 +34,8 @@
 
 3.双向数据绑定的原理。
 
-	angular双向数据绑定指的是当model中的数据发生变化时，会更新相应的view视图，同样当view视图发生变化时，会更新model中的数据。实现双向数据绑定是因为angular中设置了一个监听列队，每当在view中绑定了东西时，例如用双花括号绑定或者ngModel等绑定，angular就会往循队列中添加相应的$watch，用来监听model的变化, 每当model中的数据发生变化时，就会触发一个$digest循环，这个循环将遍历所有的$watch,当$watch发生变化时，就会通知修改相应的view视图，
+	Angular 采用的是“脏值检测”的方式。angular中设置了一个监听列队，用来监听数据变化时更新view，每当你给view视图上绑定东西时，如{{}}、ngModule、ngClass等操作时，就会把当前绑定的数据加入监听列队中，当浏览器接受到可以被angular context处理的事件时（如click等事件），就会触发这个循环列队，检查所有的数据是否有改变，如果检测到有数据变化，就会再次触发这个循环列队，再次触发这个循环是确保一个数据变化引起循环列队中其它的model变化而没被检测到，直到没有数据变化后，就不在触发循环列队，检测完成之后就会更新相应部分的view视图。
+
 
 4.angular中引用插件的方法。
 	
@@ -53,4 +54,10 @@
 	c.请求代理解决跨域问题。
 		在根目录下创建一个json文件，配置请求的域名，然后在angular.json文件中的serve处配置刚建的json文件。创建公共服务后就可以使用。
 
+6、angular中常见的命令
+
+	a、创建一个组件: ng g component home(如果要在某个目录下创建组件，则需要cd到当前目录)
+
+7、angular实现路由的原理。
 		
+	angular默认使用的路由机制是HTML5 History，HTML5 History中新增了pushState和replaceState方法，pushState方法可以向浏览器历史纪录栈顶增加一项历史纪录，这个方法可以改变url但不会发送url请求页面，（非单页面应用在url改变时会向服务端发送请求来加载当前页面）通过popstate监听浏览器URl的变化来更新视图。还有一种模式是hash模式，window.location中有一个hash属性，该属性的值是#本身以及它后面的字符，hash的改变也会在浏览器访问历史中增加记录，但hash的改变也不会向服务端发送请求，所以可以使用hashchange来监听hash的改变更新视图。我上个项目就是使用hash模式实现单页面应用的，angular8默认使用HTML5 History模式，但是当你进入到detail页面时，点击浏览器上的刷新按钮，就会向服务端发送请求，由于后端没有配置detail路由处理，就会报错404找不到当前资源。处理这个问题要么就是后端匹配不到就加载index.html，要么就是前端使用hash配置，当时解决这个问题就是我在app.module；里面匹配了使用hash模式。
