@@ -309,3 +309,4 @@ quickSort(arr) {
 	阻止默认行为： event.preventDefault();
 	阻止冒泡：event.stopPropagation();
 	
+二十一、jsonp的原理和作用。
