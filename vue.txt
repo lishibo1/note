@@ -72,10 +72,14 @@
 
 	vue生命周期指的是vue实例从创建到销毁的过程。在这个过程中要经历八个钩子函数，分别为，beforeCreate、created、beforeMount、mounted、beforeUpdate、updated、beforeDestroy、destroy。
 	
-	beforeCreate在组件实例刚被创建时执行，此时组件的属性data还没有生成。
-	created在组件实例创建完成后运行，此时data属性已经绑定，但是dom还没有生成，此时取不到dom元素。这个钩子函数用得比较多，当需要从后端请求数据，渲染到页面上时可以在这个钩子函数中运行，因为此时data属性已经生成，可以将请求到的数据保存到data中。
-	beforeMount是模版编译/挂载前.在vue的脚手架中，此时el没有生成，但是虚拟dom已经创建。
-	mounted是模版编译/挂载后。此时将虚拟dom替换成真实dom，el已经生成。但是页面还没有渲染
+	beforeCreate在组件刚开始实例化时调用，此时组件的属性data、motheds等还没生成，$route已经存在，可以做路由重定向。
+	created在组件实例创建完成后运行，此时data、motheds等都已经生成，可以向后台发送请求获取数据，vue模板还没有进行编译，此时不能操作dom元素。
+	在created和boforeMount之间有一个模板编译的过程，将vue语法写的模版编译成html模版，模版编译完成后挂载开始之前调用boforeMount，此时$el属性已经存在，但值为undefined。
+	挂载完成后调用Mounted，此时已经完成页面的渲染，可以获取到dom元素。
+	beforeUpdate在监听到数据变化之后调用，在执行某些操作时，vue会将所有数据发生变化的属性存入一个队列中，此时还没有执行更新操作。
+	updated在虚拟dom将改动映射到真实dom上，dom已经完成更新之后调用。
+	beforeDestroy在实例销毁之前调用，此时实例上的属性都存在，都可以使用。
+	destoryed在实例销毁后调用，此时Vue实例所有东西都已经解绑
 
 十六、vue路由原理。
 	
