@@ -1,7 +1,21 @@
+Vue中的基本语法
+1、v-if="isTrue"
+2、v-for="(item,index) in items" :key=item.id
+3、:class="{'addColor':isTrue}"如果isTrue为true，则添加addColor的class。:class="computeClass",这里computeClass是个计算属性，返回一个对象，如computes:{computeClass(){return {"addColor":color,"addSize":size}}}
+4、:style="{display:changeDisplay}",此处也可以和:class一样使用computes属性
+5、事件用@加事件类型,如:@click="onClick"
+6、所有需要绑定动态值的属性都用:,如div元素的name需要动态变化,:name="changeName"
+
+
+记录vue用法
+1、引入jquery：使用npm下载jquery，然后在build/webpack.base.conf.js中添加配置就可以全局使用了。
+2、swiper插件使用：使用npm下载swiper，然后在main.js中引入swiper和swiper的css就可以全局使用。
+3、怎么注册全局组件：在main.js中引入需要全局使用的组件，假如注册的是header组件。运行vue.component("AppHeader",AppHeader)，就可以在其它组件内使用这些全局组件。
+
 
 一.vue双向数据绑定的原理
 
-	vue双向数据绑定指的是当model变化时，视图view随着更新，当视图view改变时，相应的model随着更新。vue实现数据双向绑定是采用数据劫持结合发布者-订阅者模式的方式。实现双向绑定需要完成三步，第一：实现一个数据坚挺器Observer 第二：实现一个模版解析器Compile 第三：实现一个Watcher，连接observer和compile。实现数据劫持是利用Object.defineProperty()方法，对data中对每个属性及其子属性设定一对getter和setter方法，设定getter和setter方法后，每当获取data中的某个数据时，就会触发相应的getter函数，当给data中某个数据赋值时，就会触发相应的setter方法。此时已经达到了监听data中数据的效果。在Observer中创建一个订阅器，作用是搜集订阅者Watcher。
+	vue双向数据绑定指的是当model变化时，视图view随着更新，当视图view改变时，相应的model随着更新。vue实现数据双向绑定是采用数据劫持结合发布者-订阅者模式的方式。实现双向绑定需要完成三步，第一：实现一个数据监听器Observer 第二：实现一个模版解析器Compile 第三：实现一个Watcher，连接observer和compile。实现数据劫持是利用Object.defineProperty()方法，对data中对每个属性及其子属性设定一对getter和setter方法，设定getter和setter方法后，每当获取data中的某个数据时，就会触发相应的getter函数，当给data中某个数据赋值时，就会触发相应的setter方法。此时已经达到了监听data中数据的效果。在Observer中创建一个订阅器，作用是搜集订阅者Watcher。
 	实现Compile是对模版进行解析，遍历所有节点，用正则匹配{{}},解析出带有v-的指令，每碰到这些指令就实例化一个Watcher，在实例化watcher的时候会调用set方法，就可以往Observer的订阅器里面添加订阅者，在订阅者中有相应的更新视图的函数。当数据变化时在set方法里面通知订阅者调用更新函数就实现了视图更新。
 	当视图发生变化时更新数据，是在模版解析中完成的，当解析到v-model指令时，会给当前节点绑定监听事件，如input框绑定oninput事件，值发生变化就改变当前data中的属性值。
 
@@ -53,7 +67,7 @@
 不加括号无法运行。
 
 十一、v-for中key值的作用。
-	vue中使用v-for时推荐使用唯一key值来做标记是为了提高渲染速率，这跟vue中虚拟dom的diff算法有关，在虚拟dom中，diff算法默认根据循环项的index来更新需要渲染的元素，如循环一个data数组渲染ul中的li，当在data数组头部插入一条数据时，此时会在内存中生成一对新旧虚拟的js dom对象，用新生成的js dom对象和旧js dom对象根据index对比，发现第一项目就不一样需要更新，而且后面所有的都不一样，都需要更新。当在循环时加上key值时，会采用就地复用策略，根据key保留原来存在的项，只更新新添加的项，提高渲染速率。
+	vue中使用v-for时推荐使用唯一key值来做标记是为了提高渲染速率，这跟vue中虚拟dom的diff算法有关，在虚拟dom中，diff算法会进行同一层次节点比较，而且会采用就地复用策略，如循环一个data数组渲染ul中的li，当在data数组头部插入一条数据时，此时会在内存中生成一对新旧虚拟的js dom对象，用新生成的js dom对象和旧js dom对象根据index对比，发现第一项目就不一样需要更新，而且后面所有的都不一样，都需要更新。当在循环时加上key值时，会采用就地复用策略，根据key保留原来存在的项，只更新新添加的项，提高渲染速率。
 
 十二、$nextTick的使用
 	
@@ -85,3 +99,13 @@
 	
     Vue默认使用的路由机制是HTML5 History，HTML5 History中新增了pushState和replaceState方法，pushState方法可以向浏览器历史纪录栈顶增加一项历史纪录，这个方法可以改变url但不会发送url请求页面，（非单页面应用在url改变时会向服务端发送请求来加载当前页面）通过popstate监听浏览器URl的变化来更新视图。还有一种模式是hash模式，window.location中有一个hash属性，该属性的值是#本身以及它后面的字符，hash的改变也会在浏览器访问历史中增加记录，但hash的改变也不会向服务端发送请求，所以可以使用hashchange来监听hash的改变更新视图。我上个angular项目就是使用hash模式实现单页面应用的，angular8默认使用HTML5 History模式，但是当你进入到detail页面时，点击浏览器上的刷新按钮，就会向服务端发送请求，由于后端没有配置detail路由处理，就会报错404找不到当前资源。处理这个问题要么就是后端匹配不到就加载index.html，要么就是前端使用hash配置，当时解决这个问题就是我在app.module；里面配置了使用hash模式。
 	
+十七、vue父子组件传值。
+
+	父组件给子组件传值：父组件中<div><child :father="fat"></child></div>
+			子组件中接收传入的参数: props:["father"]
+	
+	子组件给父组件传值：子组件中绑定一个点击事件，当事件触发时，向外emit一个事件，父组件接收运行一个方法。
+
+			子组件中：onclick(){this.$emit("parent","传上去","111")}
+			父组件中，<child @parent="getNum"></child>
+				getNum(data1,data2){console.log(data1,data2)}
