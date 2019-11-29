@@ -109,3 +109,5 @@ Vue中的基本语法
 			子组件中：onclick(){this.$emit("parent","传上去","111")}
 			父组件中，<child @parent="getNum"></child>
 				getNum(data1,data2){console.log(data1,data2)}
+
+	特别注意，vue中自定义方法是不需要加()的，如@click="fun",当子组件给父组件传值是，父组件中方法也不需要传值，angular中需要传$event，但是当vue中调用自定义事件函数需要传值时，可以加()传值，如@click="fun('123')"

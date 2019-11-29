@@ -181,7 +181,7 @@ OOP是面向对象编程，特征分别是封装、继承、多态、抽象。
 
 
 九、介绍一下必包。
-	闭包就是能读取其它函数内部变量的函数。闭包的原理就是作用域问题，当你访问某个变量时，会先在当前作用域下查找，如果当前作用域不存在就会在外层作用域中寻找，直到找到window作用域。我们知道，一般的方法执行之后内部变量都会被释放，但是当你在这个方法中返回一个内部函数，这个内部函数就可以访问外部函数的所有变量，因此执行外部函数之后，函数内的内部变量不就被释放。
+	闭包就是能读取其它函数内部变量的函数。闭包的原理就是作用域问题，当你访问某个变量时，会先在当前作用域下查找，如果当前作用域不存在就会在外层作用域中寻找，直到找到window作用域，而外层作用域访问不到内层作用域中的变量。我们知道，一般的方法执行之后内部变量都会被释放，但是当你在这个方法中返回一个内部函数，这个内部函数就可以访问外部函数的所有变量，因此执行外部函数之后，函数内的内部变量不就被释放。可以在函数外不获取到函数内的变量。
 	闭包就是能够读取其他函数内部变量的函数
 	一般来说，函数作用域中的变量在函数外部是无法访问的，闭包可以理解为读取其它函数作用域中变量的函数，闭包可以将函数内部和函数外部连接起来。闭包的优点，可以读取函数内部的变量。
 
@@ -315,3 +315,79 @@ quickSort(arr) {
 二十一、jsonp的原理和使用。
 
 	由于浏览器同源策略的限制，非同源下的请求将会产生跨域问题，同源指协议、域名、端口都相同。但我们发现html中的img图片的src属性指向其它服务器时可以获取到图片，获取的方式是get请求，因此我们可以利用这种方式实现跨域，也就是jsonp。实现的方式是在js中动态生成一个script标签，将src属性指向需要获取数据的地址，并在地址后面传递一个回调函数给后端，后端接受到这个参数后，将需要返回的数据放入函数参数中，前端运行这个回调函数就能拿到后端的数据。
+
+二十二、promise.all用法和async await。
+
+	function setPromise(num){
+		return new Promise((resolve,reject)=>{
+			setTimeout(()=>{resolve(num)},1000);
+		});
+	}
+	Promise.all([setPromise(1111),setPromise(2222)]).then((x)=>{console.log(x)},(y)=>{})
+	Promise.all()传入一个数组，数组中传入多个返回Promise对象的函数，then()中第一个参数是成功执行的方法，x是返回的一个数组，对应传入是的函数返回值，第二个参数是失败执行的方法。（Promise.all()会等所有Promise都执行完后在调用）。
+
+	async await是配合使用的，async定义一个函数，用await接收一个Promise对象，并且await后面的代码会等Promise返回resolve之后在执行。但是async函数外的代码还是正常执行。
+
+	function setPromise(num){
+		return new Promise((resolve,reject)=>{
+			setTimeout(()=>{reject(num)},1000);
+		});
+	}
+	async function test(){
+		try{
+			console.log('aaaaa');
+			var n = await setPromise(1111);
+			console.log(n);
+		} catch(error) {
+			console.log("失败了"+error);
+		}
+	}
+	test();
+	console.log(3333);
+	输出结果为 
+	aaaaa
+	3333
+	失败了1111
+
+二十三、js中判断数据的类型。
+
+	使用Object.prototype.toString.call(data)可以判断出所有类型，得出的值是一个数组。
+	console.log(Object.prototype.toString.call(123));    //[object Number]
+	console.log(Object.prototype.toString.call('123'));    //[object String]
+	console.log(Object.prototype.toString.call(undefined));    //[object Undefined]
+	console.log(Object.prototype.toString.call(true));    //[object Boolean]
+	console.log(Object.prototype.toString.call({}));    //[object Object]
+	console.log(Object.prototype.toString.call([]));    //[object Array]
+	console.log(Object.prototype.toString.call(function(){}));    //[object Function]
+	console.log(Object.prototype.toString.call(null));    //[[object Null]]
+
+	使用typeof可以判断出基本类型，但是不能判断null、Array、Object。
+	console.log(typeof bool); //boolean
+	console.log(typeof num);//number
+	console.log(typeof str);//string
+	console.log(typeof und);//undefined
+	console.log(typeof nul);//object
+	console.log(typeof arr);//object
+	console.log(typeof obj);//object
+	console.log(typeof fun);//function
+	console.log(typeof s1); //symbol
+
+	使用instanceof可以判断出数组，对象跟函数，其它类型无法判断。
+	console.log(bool instanceof Boolean);// false
+	console.log(num instanceof Number);// false
+	console.log(str instanceof String);// false
+	console.log(und instanceof Object);// false
+	console.log(nul instanceof Object);// false
+	console.log(arr instanceof Array);// true
+	console.log(obj instanceof Object);// true
+	console.log(fun instanceof Function);// true
+	console.log(s1 instanceof Symbol);// false
+
+	因此typeof和instanceof配合可以判断出所有类型。
+	注意大小写， 只有typeof是小写。
+
+二十四、HTTP的了解。
+
+二十五、上传控件怎么写。
+
+二十六、什么是服务器端渲染和浏览器端渲染，服务器端渲染是怎么把数据放在页面上的。
