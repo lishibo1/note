@@ -298,10 +298,11 @@ quickSort(arr) {
 十七、什么是模块化开发，有什么优点？
 
 	模块化开发就是将一个大型项目拆分为不同的功能模块，由不同的模块功能拼凑成大型系统。
-十八、后端session问题。
+十八、后端session和cookie。
 
 	当每个用户第一次访问登陆接口时（第一次指在新打开的浏览器中访问，如果访问后关闭当前窗口新开一个窗口继续访问，session还保存在，后端设置session保存时间一般是三十分钟，关掉浏览器当前域下的cookie才会被删除），后端会生成一个session ID来记录当前用户的状态并开辟一个内存空间来处理当前用户的数据，并在请求返回中将session id写入浏览器cookie，当浏览器访问这个域下面的任何service时，都会携带cookie信息发送给后端，后端根据这个session id来在指定内存中处理当前用户数据。
-
+	cookie分为会话cookie和持久cookie，会话cookie在会话结束时就会消失，会话结束指关闭浏览器，会话cookie保存在浏览器的内存中，且关闭当前tab cookie不会消失，在IE中cookie不能跨进程，chrom中可以跨进程。
+	持久cookie保存在硬盘上，关闭浏览器再次打开，只要cookie没有过期，cookie信息还保存在，持久cookie可以跨进程。
 十九、xss攻击。
 
 	xss攻击通常指黑客通过 HTML 注入 篡改网页，插入恶意脚本，从而在用户浏览网页时，控制用户浏览器的一种攻击行为。比如有一个留言功能，所有用户在输入框输入内容点击提交留言就会显示在下方，如果你在输入框里面输入script标签并将src属性指向你自己的服务器，提交到服务器端，服务器返回用户写入到内容并append到页面上，就会执行这个script标签，由于jsonp可以实现跨域，所以可以在本网站获取数据写入自己服务器内。
@@ -388,6 +389,155 @@ quickSort(arr) {
 
 二十四、HTTP的了解。
 
-二十五、上传控件怎么写。
+	
+
+二十五、文件上传和图片上传。
+	
+	前后端上传是以文件流进行传输的，文件流包括文件的基本信息和文件内容。后端用MultipartFile类去接收和解析
+	使用form文件上传时要将enctype设置为multipart/form-data类型，这个编码会对文件内容进行处理。
+	如果使用ajax上传文件，则需要使用浏览器提供的FormData构造函数，实例化一个对象，将文件内容append到对象中，发送给后端。
+	当上传图片时预览：
+	var reader=new FileReader();  //调用FileReader
+        reader.readAsDataURL(file); //将文件读取为 DataURL(base64)
+        reader.onload=function(evt){   //读取操作完成时触发。
+               $("#img").attr('src',evt.target.result)  //将img标签的src绑定为DataURL
+		$.ajax({
+            		url: 'upload_base64.php',
+            		type: 'POST',
+            		data: { data: evt.target.result },
+            		dataType: 'json',
+            		success: function (res) {
+                
+            		},
+            		error: function (res) {
+               			 alert('上传出错');
+            		}
+        	});
+        };
+	
 
 二十六、什么是服务器端渲染和浏览器端渲染，服务器端渲染是怎么把数据放在页面上的。
+	
+	浏览器渲染指的是当用户在浏览器中输入地址时，服务器端给浏览器端返回一个HTMl页面，浏览器渲染这个HTML页面，并下载当前页面需要的资源，在下载资源时是异步的，当碰到script标签时，浏览器停止渲染页面，会执行相应的js代码，js会请求页面所需数据，并将数据显示在页面上，浏览器接着渲染页面，直到整个过程完成。
+	服务器端渲染指的是当用户在浏览器中输入地址时，服务器端会在服务端执行相应操作，通过模版语法，在服务端将页面所需数据全部放入页面对应位置，返回一个完整的HTML页面给浏览器，浏览器渲染返回的HTML页面只需下载对应资源，而不需要在向服务器发送请求数据。
+
+二十七、arguments的理解。
+
+	arguments是函数内的Arguments的实例对象。
+	1.arguments对象和Function是分不开的。
+	2.因为arguments这个对象不能显式创建。
+	3.arguments对象只有函数开始时才可用。
+	arguments有个属性callee，该属性指向自身函数，arguments是一个对象，对象内部包含函数的实参，所以函数内部this指向arguments对象，如下输出 10，2.
+	var length = 10;
+	function fn() {
+  		console.log(this.length);
+	}
+	var obj = { 
+  		method: function(fn) {
+    			fn();
+    			arguments[0]();
+  		}
+	};
+	obj.method(fn, 1);
+
+二十八、es6中var let const的区别。
+
+	es5中只有全局作用域和函数作用域，没有块级作用域，在{}中用var定义的变量能在{}外访问，es6中有块级作用域，使用let和const在块级作用域内定义的变量只能在块级内访问，外部访问不到。const定义的变量必须赋初始值，且值不能被改变，如果const定义的变量是个引用类型的值，属性可以改变。
+
+二十九、箭头函数和普通函数。
+
+	箭头函数this指向函数外的this，箭头函数不能使用new，箭头函数没有prototype属性，箭头函数没有arguments对象，使用...调用arguments。
+
+三十、es6中的Proxy。
+
+	es6中新增的用来干预默认行为的，如定义一个obj，当给obj赋值时会调用set方法，当获取obj某属性值时，会调用get方法。
+var person = { age: 1 };
+
+person = new Proxy( person, {
+　　set: function( target, prop, value ){
+　　　　if (prop === 'age') {
+　　　　　　if( typeof value !== 'number' ) throw new Error('age value type error');
+　　　　　　target[prop] = value < 0 ? 0 : ( value > 100 ? 100 : value );
+　　　　} else {
+　　　　　　return Reflect.set(...arguments);
+　　　　}
+　　}
+});
+
+三十一、es6新增哪些内容
+
+	es6中有块级作用域，let和const定义变量，箭头函数、模版字符串、解构、对象字面量赋值简写、promise、代理proxies等。
+	// new Object() 方式创建(es5创建对象)
+	var a = {  rep : 'apple' }
+	var b = new Object(a)
+	console.log(b) // {rep: "apple"}
+	console.log(b.__proto__) // {}
+	console.log(b.rep) // {rep: "apple"}
+
+	// Object.create() 方式创建(es6创建对象)
+	var a = { rep: 'apple' }
+	var b = Object.create(a)
+	console.log(b)  // {}
+	console.log(b.__proto__) // {rep: "apple"}
+	console.log(b.rep) // {rep: "apple"}
+
+三十二、原生js怎么绑定点击事件和解除绑定。
+
+	原生js绑定事件有两种方法，onclick和addEventListener，两者比较的差别：
+	onclick给同一个元素绑定事件只能绑定一个函数，如：dd.onclick = fun1; dd.onclick = fun2;则只有fun2生效。onclik只支持事件冒泡阶段，不支持事件捕获阶段。
+	addEventListener可以给同一个元素绑定多个事件，会依次执行，支持事件捕获阶段。addEventListener第三个参数默认是false，就是默认使用事件冒泡阶段触发绑定事件，当传入true时，使用的是事件捕获阶段触发事件。
+
+	解除绑定：
+	dd.oclick = null;
+	addEventListener解除绑定时需要绑定函数为具名函数，如下：
+	var fun = function(event){
+		console.log(event.target)
+		dd.removeEventListener("click",fun);
+	};
+	dd.addEventListener("click",fun)
+	
+	jquery中使用click也只能绑定一个事件函数，使用on可以绑定多个事件函数，jquery解除绑定的方法：
+	$("#id").unbind("click")即解除当前选中元素的所有的点击事件,可以对click和on的方法都解除。
+
+三十三、懒加载。
+
+	懒加载用在当页面元素丰富，图片比较多，页面比较高时，为了防止资源加载造成页面卡顿，可以先把图片地址放在自定义属性中储存，当页面滚动到显示当前图片的位置时，将图片地址改为正确地址。
+
+	节流函数：当事件频繁触发时，为了减轻服务器压力，可以设置固定时间在发送请求。
+	function throttle(lazyTime, Fuc){
+                var lastTime = null //记录上次时间
+                return function(){
+                    var currentTime = new Date().getTime();
+                    if(!lastTime){ //初始化时间
+                        lastTime = currentTime;
+                    }
+                    if(lastTime + lazyTime < currentTime){
+                        Fuc();
+                        lastTime = currentTime;
+                    }
+                }
+            }
+            window.onscroll = throttle(50, lazyload) //事件回调是个闭包
+
+	防抖函数：当持续触发某个事件时，为了减轻服务器压力，当一定时间内不在触发事件时会调用函数。
+
+	   function debounce(Fuc, time){ //防抖
+                let timer = null
+                return function () {
+                    clearTimeout(timer); 
+		    //清除定时器，如果触发时间超过设定时间，则定时器中的代码不能执行
+                    timer = setTimeout(() => {
+                        Fuc()
+                    }, time); //重新赋值定时器
+                }
+            }
+            function test(){
+                document.querySelector('#text').innerHTML = new Date().getTime();
+            }
+            document.querySelector('#input').addEventListener('input', debounce(test, 1000))
+
+三十四、开发模式之原生应用、Web应用、混合应用。
+
+	开发原生应用就是适应对应的设备，特别为某种操作系统开发的，如Word只在window上运行，Android系统的专用软件等。
+	Web应用：Web应用本质上是为移动浏览器设计的基于Web的应用，它们是用普通Web开发语言开发的，可以在各种智能手机浏览器上运行。简单来说就是使用浏览器访问的网页。
+	混合应用大家都知道是原生应用和Web应用的结合体，采用了原生应用的一部分、Web应用的一部分，所以必须在部分在设备上运行、部分在Web上运行。也就是有原生应用的外壳，访问Web服务器。
