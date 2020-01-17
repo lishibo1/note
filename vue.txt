@@ -15,7 +15,7 @@ Vue中的基本语法
 
 一.vue双向数据绑定的原理
 
-	vue双向数据绑定指的是当model变化时，视图view随着更新，当视图view改变时，相应的model随着更新。vue实现数据双向绑定是采用数据劫持结合发布者-订阅者模式的方式。实现双向绑定需要完成三步，第一：实现一个数据监听器Observer 第二：实现一个模版解析器Compile 第三：实现一个Watcher，连接observer和compile。实现数据劫持是利用Object.defineProperty()方法，对data中对每个属性及其子属性设定一对getter和setter方法，设定getter和setter方法后，每当获取data中的某个数据时，就会触发相应的getter函数，当给data中某个数据赋值时，就会触发相应的setter方法。此时已经达到了监听data中数据的效果。在Observer中创建一个订阅器，作用是搜集订阅者Watcher。
+	vue双向数据绑定指的是当model变化时，视图view随着更新，当视图view改变时，相应的model随着更新。vue实现数据双向绑定是采用数据劫持结合发布者-订阅者模式的方式。实现双向绑定需要完成三步，第一：实现一个数据监听器Observer 第二：实现一个模版解析器Compile 第三：实现一个Watcher，连接observer和compile。实现数据劫持是利用Object.defineProperty()方法，对data中对每个属性及其子属性设定一对get和set方法，设定get和set方法后，每当获取data中的某个数据时，就会触发相应的getter函数，当给data中某个数据赋值时，就会触发相应的setter方法。此时已经达到了监听data中数据的效果。在Observer中创建一个订阅器，作用是搜集订阅者Watcher。
 	实现Compile是对模版进行解析，遍历所有节点，用正则匹配{{}},解析出带有v-的指令，每碰到这些指令就实例化一个Watcher，在实例化watcher的时候会调用set方法，就可以往Observer的订阅器里面添加订阅者，在订阅者中有相应的更新视图的函数。当数据变化时在set方法里面通知订阅者调用更新函数就实现了视图更新。
 	当视图发生变化时更新数据，是在模版解析中完成的，当解析到v-model指令时，会给当前节点绑定监听事件，如input框绑定oninput事件，值发生变化就改变当前data中的属性值。
 
