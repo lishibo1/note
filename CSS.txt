@@ -71,11 +71,11 @@
 
 	这两个单位都是自适配单位。rem的用法，是根据跟元素html字体大小来适配的，当给跟元素html设置字体大小为16px时，1rem就等于16px(注意：当html没有设置字体大小时，默认为16px)。em的用法，em是相对于当前元素字体大小来适配的，当前元素字体大小为20px，则1em就等于20px，由于页面元素属性有继承效果，如果当前元素字体大小没有设置，那当前元素字体大小会继承自父元素（假如父元素字体大小为30px），则1em等于30px；
 	
-八、css盒子模型。
+八、css盒子模型。(css3指定的盒子模型width指内容区域的宽度，但是IE浏览器有兼容问题，低版本IE中width指的是border+padding+content，相当于给元素设置box-sizing: border-box)
 
-	在浏览器中，元素可以看做是一个盒子，但是当你给元素设置width和height时，并不是当前元素所占用的位置和设置的宽高一样大，而是当前元素的内容区所占用的区域大小，当前元素所占据的位置 = width + padding + border + margin。当把元素设置border-sising: border-box时，给元素设置width和height时，是包括边框在内的面积，只不包括margin。（注意：当给元素设置背景颜色时，padding也会变色，边框不会变，margin不会变）
+	在浏览器中，元素可以看做是一个盒子，但是当你给元素设置width和height时，并不是当前元素所占用的位置和设置的宽高一样大，而是当前元素的内容区所占用的区域大小，当前元素所占据的位置 = width + padding + border + margin。当把元素设置box-sizing: border-box时，给元素设置width和height时，是包括边框在内的面积，只不包括margin。（注意：当给元素设置背景颜色时，padding也会变色，边框不会变，margin不会变）
 
-九、什么是伪类、伪元素。
+九、什么是伪类、伪元素。（https://www.jianshu.com/p/996d021bced3）
 
 	伪类指的不存在的类，伪类主要作用可以用来选择元素和提供一些状态属性，伪类用:单冒号表示。
 	p:first-child	(选择子元素中第一个元素)
@@ -87,5 +87,9 @@
 
 
 	伪元素指实际文档中没有的元素，伪元素用::双冒号表示，
-	
-		
+	比较常用的有::before    ::after
+	<p class="element">伪类学习</p>
+	.element::before{
+		content:" ";
+	}	
+	content为必须属性，注意当content内容为html代码时，会直接显示带标签的文字	
