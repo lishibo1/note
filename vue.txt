@@ -111,3 +111,53 @@ Vue中的基本语法
 				getNum(data1,data2){console.log(data1,data2)}
 
 	特别注意，vue中自定义方法是不需要加()的，如@click="fun",当子组件给父组件传值是，父组件中方法也不需要传值，angular中需要传$event，但是当vue中调用自定义事件函数需要传值时，可以加()传值，如@click="fun('123')"
+
+十八、Vue中监听属性值发生变化
+
+	当监听的是单个属性时
+	data: function() {
+    		return {
+      			counter: 0,
+    		};
+  	}
+	watch: {
+    		counter: function(newV, oldV) {
+      			console.log('counter change to %d from %d', newV, oldV);
+    		},
+  	}
+	当监听的是一个object对象时，object中属性值发生变化时不会触发回调函数，因为object指向的地址没有发生变化，所以监听对象发生变化时有以下三种方法
+	data: function() {
+    		return {
+     			counter: {
+        			up: 0,
+        			down: 0,
+      			},
+    		};
+  	}
+方法1：给object重新赋值，可以直接监听object
+	watch: {
+    		counter: function(newV, oldV) {
+            		console.log('counter change to %o from %o', newV, oldV);
+    		},
+  	}
+方法2：使用deep参数
+	使用deep需要使用watch的完整形式：handler是监听回调函数，deep: true指定了不仅仅监听counter的变化，也监听其内部属性的变化，所以当counter.up或counter.down变化时才能出发handler回调。
+	watch: {
+  		counter: {
+    			handler: function(newV, oldV) {
+      				console.log('counter change to %o from %o', newV, oldV);
+    			},
+    			deep: true,
+  		}
+	}
+比较方法1和方法2的优缺点
+	使用deep参数会为数据每一层都添加监听，当层级较深时比较耗费性能，而且Vue不能监听到属性的添加或删除。所以一般来说使用重新赋值的方式是较优的方案，但如果只是想监听内部嵌套数据的话，重新赋值就比较重了，
+方法3：监听object对象中的某个属性
+	watch: {
+  		'counter.up': function(newV, oldV) {
+    			console.log('counter.up change to %d from %d', newV, oldV);
+  		},
+  		'counter.down': function(newV, oldV) {
+    			console.log('counter.down change to %d from %d', newV, oldV);
+  		},
+	}

@@ -5,3 +5,4 @@
 5、对http的了解。
 6、vue中公共资源加载和angular中公共资源加载对比。（angular中只需在angular.json中配置，然后在当前组件js中declare）。
 7、说明一下你对angular、vue、jquery的理解。
+8、原生js获取元素的方法、设置css属性，jQuery获取元素的方法和设置属性
