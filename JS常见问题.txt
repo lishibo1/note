@@ -217,6 +217,44 @@ OOP是面向对象编程，特征分别是封装、继承、多态、抽象。
 
 （https://www.jianshu.com/p/85899e287694继承的多种方式）
 继承：子类继承了父类所有的成员方法和属性，并且可以拥有自己特性。继承解决了代码的重用问题
+function Person(){
+     this.name = 'xiaopao';
+     this.colors = ['red', 'blue', 'green'];
+}
+
+function Child(){
+
+}
+Child.prototype = new Person();
+var child1 = new Child();
+var child2 = new Child();
+child1.colors.push("yellow");
+child1.name = "change";
+console.log(child1.colors,child2.colors);
+console.log(child1.name,child2.name);
+child1.__proto__.name = "change";
+console.log(child1.name,child2.name);
+
+(此处child1.name = "change";赋值时是给当前对象中增加此属性，如果当前对象中有此属性则覆盖，如果当前对象原型中有此属性，也会在对象中增加此属性，当访问该属性时，现在对象自身中寻找，没找到在到原型中寻找。child1.colors.push("yellow");由于使用了push方法操作数组，因此会先寻找是否有colors属性，对象自身中没有此属性，但是原型中有此属性，因此会操作原型中的colors属性。)
+
+继承有多种方式：
+1、原型链继承：如上继承方式，这种继承方式在创建child实例时不能向person穿参，而且引用属性被所有实例共享
+2、借用构造函数继承：在子构造函数中使用call调用父构造函数，此继承方法只能继承父构造函数中的属性，不能继承父构造函数中prototype中属性
+3、组合继承：在子构造函数中使用call调用父构造函数，在外部执行child.prototype = new parent();这种方法调用了两次父构造函数，当执行child.prototype = new parent()时，子构造函数的原型中已经拥有父构造函数所有的属性以及方法，当在子构造函数中执行parent.call(this)时，此时又为子构造函数增加了父构造函数中所有的属性，因此此方法会导致实例化的对象在对象本身就有父构造函数中所有属性，在实例化对象的__proto__中也拥有一份父构造函数的属性。
+4、寄生组合式继承：此继承方式就是修改组合继承，在子构造函数中执行parent.call(this),继承父构造函数中所有的属性，然后执行
+function inheritPrototype(subType, superType){
+    var protoType = Object.create(superType.prototype);    //创建对象
+    protoType.constructor = subType;                    //增强对象
+    subType.prototype = protoType;                        //指定对象
+}
+inheritPrototype(subType, superType)；
+
+（注：Object.create(proto, propertiesObject)有两个参数，第一个参数是生成的对象__proto__指向的对象，上述执行的结果是，创建了一个空对象，对象的__proto__指向superType.prototype。第二个参数是给对象中增加属性。
+使用hasOwnProperty()可以判断属性是否在对象中，返回true则说明属性在对象中而不是在原型中，使用方法obj.hasOwnProperty("name")）。
+
+目的是重新创建一个对象，对象中有父构造函数中所有prototype对象的方法，此处为什么不执行subType.prototype = superType.prototype;如果执行此代码，那么子构造函数和父构造函数的原型对象将指向同一个对象当给子构造函数原型对象增加方法时，父构造函数原型中也会增加此方法。
+
+多态：同一操作作用于不同的对象，可以有不同的解释，产生不同的执行结果。
 多态：多态存在的三个条件1.继承2.重写3.父类引用指向子类对象
 多态的实现方式1.接口实现，继承父类方法重写，同一个类中进行重载
 重载：多个同名函数同时存在，具有不同的参数个数/类型，返回值类型可以相同可
@@ -231,7 +269,21 @@ OOP是面向对象编程，特征分别是封装、继承、多态、抽象。
 
 
 九、介绍一下必包。
-	闭包就是能读取其它函数内部变量的函数。闭包的原理就是作用域问题，当你访问某个变量时，会先在当前作用域下查找，如果当前作用域不存在就会在外层作用域中寻找，直到找到window作用域，而外层作用域访问不到内层作用域中的变量。我们知道，一般的方法执行之后内部变量都会被释放，但是当你在这个方法中返回一个内部函数，这个内部函数就可以访问外部函数的所有变量，因此执行外部函数之后，函数内的内部变量不就被释放。可以在函数外不获取到函数内的变量。
+	闭包就是能读取其它函数作用域中变量的函数。闭包的原理就是作用域问题，当你访问某个变量时，会先在当前作用域下查找，如果当前作用域不存在就会在外层作用域中寻找，直到找到window作用域，而外层作用域访问不到内层作用域中的变量。我们知道，一般的方法执行之后内部变量都会被释放，但是当你在这个方法中返回一个内部函数，这个内部函数就可以访问外部函数的所有变量，因此执行外部函数之后，函数内的内部变量不就被释放。举个简单的例子，一次性定时器
+
+    setTimeout(function(param){
+        alert(param)
+    },1000)
+
+
+    //通过闭包可以实现传参效果
+    function func(param){
+        return function(){
+            alert(param)
+        }
+    }
+    var f1 = func(1);
+    setTimeout(f1,1000);
 	闭包就是能够读取其他函数内部变量的函数
 	一般来说，函数作用域中的变量在函数外部是无法访问的，闭包可以理解为读取其它函数作用域中变量的函数，闭包可以将函数内部和函数外部连接起来。闭包的优点，可以读取函数内部的变量。
 
@@ -239,9 +291,11 @@ OOP是面向对象编程，特征分别是封装、继承、多态、抽象。
 	
 	每个函数都自带一个prototype属性，prototype属性指向一个对象，就是原型对象。每个对象自带一个__proto__属性，一般情况来说，这个__proto__属性指向生成当前实例的类的原型。当我们访问对象的一个属性时，它会先在自身中寻找，如果有则直接使用，如果没有就到__proto__所指的原型中找，如果原型中有则直接使用，如果没有就到原型的原型中寻找，直到找到Object对象的原型为止，Object的原型就是原型链的顶端。如创建一个构造函数Person，let一个变量people等于new Person，那么实例people中就有一个__proto__属性指向生成这个对象的类的原型，也就是构造函数的原型（在构造函数内部可以定义一些属性，这些属性会在实例化时保存在每个实例内部，比如Person中定义age和name等，可以在new时传入参数来实现各个实例产生不同的属性值，构造函数prototype属性指向的原型对象里面可以定义一些方法，这些方法是所有实例公用的，也就是实例__proto__所指向的对象。），普通函数的原型都是系统自动生成的‘object’类型的对象，竟然是对象，它里面同样有一个属性__proto__指向Object函数的原型，而Object函数的原型中__proto__属性是null，也就是原型链的顶端。	
 
-https://s1.51cto.com/images/blog/201902/19/3aac1f57ace09faf8d69b4aa11dc3ad6.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=
-十一、sort排序函数的原理和使用方法。
+什么叫原型链：https://blog.csdn.net/qq_42019025/article/details/80708446。
 
+https://s1.51cto.com/images/blog/201902/19/3aac1f57ace09faf8d69b4aa11dc3ad6.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=
+
+十一、
 	sort函数是对数组进行排序，依次取数组中的两个元素进行比较，就像冒泡排序样，sort函数接受一个回调函数作为参数，如果回调函数返回的值大于0，则a排到b的后面（大于0则a，b调换位置），如果回调函数的值等于0，则不换位置，如果回调函数的值小于0，则b排到a的后面（小于0则a，b位置不变）。
 
 	arr=[10,5,8,20,1000,2];
@@ -263,6 +317,7 @@ function setSort(arr) {
       }
       i--;
     }
+    retrun arr;
  }
 var arr=[10,6,20,5,1000,1];
 setSort(arr);
@@ -291,10 +346,11 @@ setSort(arr);
 
 function setSort(arr) {
     let i = arr.length, j = 0,flag;
-    Let lastIndex = i-1;
+    let lastIndex = i-1;
     while (i > 1) {
 	flag = false;
-      for (j = 0; j < lastIndex; j++) {
+	let lastLength = lastIndex;
+      for (j = 0; j < lastLength; j++) {
         if (arr[j] > arr[j + 1]) {
           const tem = arr[j];
           arr[j] = arr[j + 1];
@@ -306,6 +362,7 @@ function setSort(arr) {
       i--;
       if(!flag) break;
     }
+    return arr;
  }
 var arr=[10,6,20,5,1000,1];
 setSort(arr);
