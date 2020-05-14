@@ -9,11 +9,11 @@ Vue中的基本语法
 
 记录vue用法
 1、引入jquery：使用npm下载jquery，然后在build/webpack.base.conf.js中添加配置就可以全局使用了。
-2、swiper插件使用：使用npm下载swiper，然后在main.js中引入swiper和swiper的css就可以全局使用。
+2、swiper插件使用：使用npm下载swiper，然后在main.js中引入swiper和swiper的css就可以全局使用。如果只有个别组件使用swiper，那可以在组件中引入swiper和swiper的css。
 3、怎么注册全局组件：在main.js中引入需要全局使用的组件，假如注册的是header组件。运行vue.component("AppHeader",AppHeader)，就可以在其它组件内使用这些全局组件。
 
 
-一.vue双向数据绑定的原理
+一.vue双向数据绑定的原理(https://blog.csdn.net/longzhoufeng/article/details/80987527)
 
 	vue双向数据绑定指的是当model变化时，视图view随着更新，当视图view改变时，相应的model随着更新。vue实现数据双向绑定是采用数据劫持结合发布者-订阅者模式的方式。实现双向绑定需要完成三步，第一：实现一个数据监听器Observer 第二：实现一个模版解析器Compile 第三：实现一个Watcher，连接observer和compile。实现数据劫持是利用Object.defineProperty()方法，对data中对每个属性及其子属性设定一对get和set方法，设定get和set方法后，每当获取data中的某个数据时，就会触发相应的getter函数，当给data中某个数据赋值时，就会触发相应的setter方法。此时已经达到了监听data中数据的效果。在Observer中创建一个订阅器，作用是搜集订阅者Watcher。
 	实现Compile是对模版进行解析，遍历所有节点，用正则匹配{{}},解析出带有v-的指令，每碰到这些指令就实例化一个Watcher，在实例化watcher的时候会调用set方法，就可以往Observer的订阅器里面添加订阅者，在订阅者中有相应的更新视图的函数。当数据变化时在set方法里面通知订阅者调用更新函数就实现了视图更新。
@@ -82,9 +82,24 @@ Vue中的基本语法
 
 	v-for的优先级高于v-if,当在同一个标签上绑定v-for和v-if时，会先循环数组对象，然后判断v-if中的数据是否为true看是否显示该视图。这样会降低渲染效率，因为不管v-if中的值为true或false，都会进行一次循环。改进的方法是用计算属性来遍历需要循环的数组，当状态值为true时返回需要渲染的值。
 
+如 users = [{"name":"li","sex":1},{"name":"liu","sex":0},{"name":"yu","sex":1}];
+使用<li v-for="(user,index) in users" :key="index" v-if="user.sex"></li>会循环整个数组，然后判断v-if，这样会降低效率。
+改为：
+<li v-for="(user,index) in users" :key="index"></li>
+
+computed: {
+    Sex1: function(){
+		return this.users.filter((x)=>{
+			return x["sex"] == 1;
+		})
+	}
+}
+
+filter函数和map函数差不多，都可以处理数组并返回结果。map是返回处理后的结果，而filter是删选数组中的个别项。如上返回 Sex1 = [{"name":"li","sex":1},{"name":"yu","sex":1}]
+
 十五、vue生命周期有哪些钩子函数，分别有什么用？
 
-	vue生命周期指的是vue实例从创建到销毁的过程。在这个过程中要经历八个钩子函数，分别为，beforeCreate、created、beforeMount、mounted、beforeUpdate、updated、beforeDestroy、destroy。
+	vue生命周期指的是vue实例从创建到销毁的过程。在这个过程中要经历八个钩子函数，分别为，beforeCreate、created、beforeMount、mounted、beforeUpdate、updated、beforeDestroy、destroyed。
 	
 	beforeCreate在组件刚开始实例化时调用，此时组件的属性data、motheds等还没生成，$route已经存在，可以做路由重定向。
 	created在组件实例创建完成后运行，此时data、motheds等都已经生成，可以向后台发送请求获取数据，vue模板还没有进行编译，此时不能操作dom元素。

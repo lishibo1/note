@@ -426,7 +426,7 @@ Cookie是客户端保存用户信息的一种机制，用来记录用户的一�
 十九、xss攻击。（https://www.cnblogs.com/tugenhua0707/p/10909284.html）
 
 	xss攻击通常指黑客通过 HTML 注入 篡改网页，插入恶意脚本，从而在用户浏览网页时，控制用户浏览器的一种攻击行为。比如有一个留言功能，所有用户在输入框输入内容点击提交留言就会显示在下方，如果你在输入框里面输入script标签并将src属性指向你自己的服务器，提交到服务器端，服务器返回用户写入的内容并append到页面上，就会执行这个script标签，由于jsonp可以实现跨域，所以可以在本网站获取数据写入自己服务器内。
-	我上个项目就有解决xss攻击问题，所有从前端发送给后端的数据，都会经过转义处理，后端接收后进行反转义处理将正常的数据存入数据库，所有后端送给前端处理的数据也都会经过转义处理，前端渲染需要进行反转义处理。因为项目开发到中后期才注意到xss攻击，所以需要找到改动尽量小的设计方案，因此就想到在原先的方法上进行封装，将.val()方法在框架中改写igtbval()，判断.igtbval()是否穿参，没穿参说明是从页面获取内容，此时在内部使用this.val()获取到当前内容，然后调用escape进行转义，返回转义后到值。穿参是给dom元素赋值，就在igtbval()方法中进行反转义，返回this对象，让igtbval()也可以实现链式操作。
+	我上个项目就有解决xss攻击问题，所有从前端发送给后端的数据，都会经过转义处理，后端接收后进行反转义处理将正常的数据存入数据库，后端返回正常的数据给前端，前端可以进行长度比较，当需要把后端返回的内容挂载到页面上时，需要进行转义处理，浏览器会进行自动的返转义处理。因为项目开发到中后期才注意到xss攻击，所以需要找到改动尽量小的设计方案，因此就想到在原先的方法上进行封装，将.val()方法在框架中改写igtbval()，判断.igtbval()是否穿参，没穿参说明是从页面获取内容，此时在内部使用this.val()获取到当前内容，然后调用escape进行转义，返回转义后到值。穿参是给dom元素赋值，就在igtbval()方法中进行反转义，返回this对象，让igtbval()也可以实现链式操作。
 
 二十、阻止冒泡和默认行为的方法
 
@@ -509,6 +509,7 @@ echo $callback."(".json_encode($data).")";
 	console.log(Object.prototype.toString.call(null));    //[[object Null]]
 
 	使用typeof可以判断出基本类型，但是不能判断null、Array、Object。
+	typeof的用法：typeof(a) 或者 typeof a
 	console.log(typeof bool); //boolean
 	console.log(typeof num);//number
 	console.log(typeof str);//string
@@ -537,14 +538,30 @@ echo $callback."(".json_encode($data).")";
 
 	
 
-二十五、文件上传和图片上传。
+二十五、文件上传和图片上传。(在上传文件时的触发事件是change事件，而不是click事件)
 	
 	前后端上传是以文件流进行传输的，文件流包括文件的基本信息和文件内容。后端用MultipartFile类去接收和解析
 	使用form文件上传时要将enctype设置为multipart/form-data类型，这个编码会对文件内容进行处理。
 	如果使用ajax上传文件，则需要使用浏览器提供的FormData构造函数，实例化一个对象，将文件内容append到对象中，发送给后端。
+	上传文件时使用FormData：
+	var formData = new FormData();
+	formData.append("file",$("#file")[0].files[0]);
+	$.ajax({
+            	url: 'upload_base64.php',
+            	type: 'POST',
+            	data: { data: formData },
+            	dataType: 'json',
+            	success: function (res) {
+                
+            	},
+            	error: function (res) {
+               		alert('上传出错');
+            	}
+        });
+
 	当上传图片时预览：
 	var reader=new FileReader();  //调用FileReader
-        reader.readAsDataURL(file); //将文件读取为 DataURL(base64)
+        reader.readAsDataURL($("#file")[0].files[0]); //将文件读取为 DataURL(base64)
         reader.onload=function(evt){   //读取操作完成时触发。
                $("#img").attr('src',evt.target.result)  //将img标签的src绑定为DataURL
 		$.ajax({
@@ -569,28 +586,33 @@ echo $callback."(".json_encode($data).")";
 
 二十七、arguments的理解。
 
-	arguments是函数内的Arguments的实例对象。
+	arguments是函数内的Arguments的实例对象。arguments对象是所有（非箭头）函数中都可用的局部变量。
 	1.arguments对象和Function是分不开的。
 	2.因为arguments这个对象不能显式创建。
 	3.arguments对象只有函数开始时才可用。
 	arguments有个属性callee，该属性指向自身函数，arguments是一个对象，对象内部包含函数的实参，所以函数内部this指向arguments对象，如下输出 10，2.
 	var length = 10;
+	var obj = {"length":"arguments","getLength":function(){console.log(this.length)}};
 	function fn() {
   		console.log(this.length);
 	}
 	var obj = { 
   		method: function(fn) {
     			fn();
-    			arguments[0]();
+    			arguments[2].getName();
   		}
 	};
-	obj.method(fn, 1);
+	obj.method(fn, 1, obj);
 
 二十八、es6中var let const的区别。
 
 	es5中只有全局作用域和函数作用域，没有块级作用域，在{}中用var定义的变量能在{}外访问，es6中有块级作用域，使用let和const在块级作用域内定义的变量只能在块级内访问，外部访问不到。const定义的变量必须赋初始值，且值不能被改变，如果const定义的变量是个引用类型的值，属性可以改变。
 	var、let、const都会申明提前，但是let和var有区别，当var在后面定义变量，前面使用变量时会报undefind,当let在后面定义变量，前面使用变量时会报错，都不是报错未定义。
-
+	1、在es5中只有全局作用域和块级作用域，es6中有块级作用域，使用let和const申明变量能形成块级作用域。
+	2、在全局作用域下使用var定义的变量会挂载到window上，而let和const申明的变量不会，如var a = 1; console.log(window.a)。
+	3、var有申明提前的作用，let和const必须先申明然后使用变量，否则会报错。var先使用变量后申明会返回undefined。
+	4、同一作用域下let和const不能声明同名变量，而var可以。
+	5、const定义的变量必须赋初始值，且值不能被改变，如果const定义的变量是个引用类型的值，属性可以改变。
 二十九、箭头函数和普通函数。
 
 	箭头函数this指向函数外的this，箭头函数不能使用new，箭头函数没有prototype属性，箭头函数没有arguments对象，使用...调用arguments。
@@ -600,7 +622,7 @@ echo $callback."(".json_encode($data).")";
 	es6中新增的用来干预默认行为的，如定义一个obj，当给obj赋值时会调用set方法，当获取obj某属性值时，会调用get方法。
 var person = { age: 1 };
 
-person = new Proxy( person, {
+var Pperson = new Proxy( person, {
 　　set: function( target, prop, value ){
 　　　　if (prop === 'age') {
 　　　　　　if( typeof value !== 'number' ) throw new Error('age value type error');
@@ -611,6 +633,8 @@ person = new Proxy( person, {
 　　}
 });
 
+let p = new Proxy(target, handler);  中有两个参数，第一个是传入的目标对象，第二个是一个对象，里面可以有set、get之类的方法。注意，当执行new Proxy()后，改变原先的对象，代理后的对象也会改变，但是代理后的对象和原对象不相等。即person == Pperson  //false
+
 三十一、es6新增哪些内容
 
 	es6中有块级作用域，let和const定义变量，箭头函数、模版字符串、解构、对象字面量赋值简写、promise、代理proxies等。
@@ -618,8 +642,10 @@ person = new Proxy( person, {
 	var a = {  rep : 'apple' }
 	var b = new Object(a)
 	console.log(b) // {rep: "apple"}
-	console.log(b.__proto__) // {}
+	console.log(b.__proto__) // Object.prototype
 	console.log(b.rep) // {rep: "apple"}
+	console.log(a === b) // true
+	使用这种方式创建对象跟 var b = a 一样，变量a、b都指向同一个对象。
 
 	// Object.create() 方式创建(es6创建对象)
 	var a = { rep: 'apple' }
@@ -633,19 +659,18 @@ person = new Proxy( person, {
 	原生js绑定事件有两种方法，onclick和addEventListener，两者比较的差别：
 	onclick给同一个元素绑定事件只能绑定一个函数，如：dd.onclick = fun1; dd.onclick = fun2;则只有fun2生效。onclik只支持事件冒泡阶段，不支持事件捕获阶段。
 	addEventListener可以给同一个元素绑定多个事件，会依次执行，支持事件捕获阶段。addEventListener第三个参数默认是false，就是默认使用事件冒泡阶段触发绑定事件，当传入true时，使用的是事件捕获阶段触发事件。
-
+	绑定事件后，事件函数中的this都是指向绑定的元素。
 	解除绑定：
-	dd.oclick = null;
+	dd.onclick = null;
 	addEventListener解除绑定时需要绑定函数为具名函数，如下：
 	var fun = function(event){
 		console.log(event.target)
 		dd.removeEventListener("click",fun);
 	};
 	dd.addEventListener("click",fun)
-	
-	jquery中使用click也只能绑定一个事件函数，使用on可以绑定多个事件函数，jquery解除绑定的方法：
-	$("#id").unbind("click")即解除当前选中元素的所有的点击事件,可以对click和on的方法都解除。
 
+	jquery中绑定点击事件可以用$("#id").click(fun)和$("#id").on("click",fun),两者的区别在于当元素是动态添加的，使用click绑定将不会生效，因为此时元素不存在，但是on可以使用事件代理实现。这两种方法都能绑定多个函数，解除绑定的方法$("#id").off("click")，或者只解除其中一个函数，如$("#id").off("click", fun1)。
+	
 三十三、懒加载。
 
 	懒加载用在当页面元素丰富，图片比较多，页面比较高时，为了防止资源加载造成页面卡顿，可以先把图片地址放在自定义属性中储存，当页面滚动到显示当前图片的位置时，将图片地址改为正确地址。
@@ -667,6 +692,7 @@ person = new Proxy( person, {
             window.onscroll = throttle(50, lazyload) //事件回调是个闭包
 
 	防抖函数：当持续触发某个事件时，为了减轻服务器压力，当一定时间内不在触发事件时会调用函数。
+	// 防抖函数，就是指触发事件后在 n 秒内函数只能执行一次，如果在 n 秒内又触发了事件，则会重新计算函数执行时间。
 
 	   function debounce(Fuc, time){ //防抖
                 let timer = null
@@ -682,6 +708,8 @@ person = new Proxy( person, {
                 document.querySelector('#text').innerHTML = new Date().getTime();
             }
             document.querySelector('#input').addEventListener('input', debounce(test, 1000))
+
+注意，记住这两个方法的技巧，事件都是调用的一个闭包，节流函数中闭包保存的变量是当前时间，防抖函数中闭包保存的变量是一次性定时器。
 
 三十四、开发模式之原生应用、Web应用、混合应用。
 
