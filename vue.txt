@@ -15,7 +15,9 @@ Vue中的基本语法
 
 一.vue双向数据绑定的原理(https://blog.csdn.net/longzhoufeng/article/details/80987527)
 
-	vue双向数据绑定指的是当model变化时，视图view随着更新，当视图view改变时，相应的model随着更新。vue实现数据双向绑定是采用数据劫持结合发布者-订阅者模式的方式。实现双向绑定需要完成三步，第一：实现一个数据监听器Observer 第二：实现一个模版解析器Compile 第三：实现一个Watcher，连接observer和compile。实现数据劫持是利用Object.defineProperty()方法，对data中对每个属性及其子属性设定一对get和set方法，设定get和set方法后，每当获取data中的某个数据时，就会触发相应的getter函数，当给data中某个数据赋值时，就会触发相应的setter方法。此时已经达到了监听data中数据的效果。在Observer中创建一个订阅器，作用是搜集订阅者Watcher。
+	vue双向数据绑定指的是当model变化时，视图view随着更新，当视图view改变时，相应的model随着更新。vue实现数据双向绑定是采用数据劫持结合发布者-订阅者模式的方式。实现双向绑定需要完成三步，第一：实现一个数据监听器Observer 第二：实现一个模版解析器Compile 第三：实现一个Watcher，连接observer和compile。实现数据劫持是利用Object.defineProperty()方法，对data中对每个属性及其子属性设定一对get和set方法，设定get和set方法后，每当获取data中的某个数据时，就会触发相应的getter函数，当给data中某个数据赋值时，就会触发相应的setter方法。此时已经达到了监听data中数据的效果。
+连接视图和数据的中间桥梁需要实现一个Watcher。每当往视图上绑定一些东西的时候就会去实例化一个Watcher，实例化Watcher是会调用当前属性的get方法，
+在Observer中创建一个订阅器，作用是搜集订阅者Watcher。
 	实现Compile是对模版进行解析，遍历所有节点，用正则匹配{{}},解析出带有v-的指令，每碰到这些指令就实例化一个Watcher，在实例化watcher的时候会调用set方法，就可以往Observer的订阅器里面添加订阅者，在订阅者中有相应的更新视图的函数。当数据变化时在set方法里面通知订阅者调用更新函数就实现了视图更新。
 	当视图发生变化时更新数据，是在模版解析中完成的，当解析到v-model指令时，会给当前节点绑定监听事件，如input框绑定oninput事件，值发生变化就改变当前data中的属性值。
 
@@ -69,7 +71,13 @@ Vue中的基本语法
 十一、v-for中key值的作用。
 	vue中使用v-for时推荐使用唯一key值来做标记是为了提高渲染速率，这跟vue中虚拟dom的diff算法有关，在虚拟dom中，diff算法会进行同一层次节点比较，而且会采用就地复用策略，如循环一个data数组渲染ul中的li，当在data数组头部插入一条数据时，此时会在内存中生成一对新旧虚拟的js dom对象，用新生成的js dom对象和旧js dom对象根据index对比，发现第一项目就不一样需要更新，而且后面所有的都不一样，都需要更新。当在循环时加上key值时，会采用就地复用策略，根据key保留原来存在的项，只更新新添加的项，提高渲染速率。
 
-十二、$nextTick的使用
+十二、$nextTick的使用（https://www.jianshu.com/p/a7550c0e164f）
+
+$nextTick的两个应用场景：
+1、在created()钩子函数中操作dom。执行create()钩子函数时，dom元素还没渲染，因此在create()钩子函数中操作dom的js都要放在$nextTick()里面。
+2、在一个事件函数中，改变了某个元素的值，然后你想去操作这个元素获取它改变后的值，这种操作也要放在$nextTick()中。因为vue中执行dom更新都是异步的，当数据变化时，Vue将开启一个列队，缓冲同一事件中所有数据变化，等事件函数执行完后的某个事件点在去循环更新视图。
+
+
 	
 	vue中是异步执行DOM更新的，当数据变化时，Vue将开启一个列队，缓冲同一事件中所有数据变化，之后vue循环执行队列更新视图。
 	vue中如果从后台获取数据，赋值给一个变量，然后循环这个变量来渲染列表，假如此时你想操作dom，是获取不到dom的，因为vue中是异步执行dom更新的，当数据变化时，会开启一个列队，缓冲在同一事件中发生的所有数据改变，然后循环执行更新dom。

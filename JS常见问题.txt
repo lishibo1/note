@@ -75,14 +75,14 @@ arr.forEach(function(value,index，arr){
 
 	(注意：map循环后会返回一个数组)
 如：	var arr = [1,2,3,4,5];
-	var newArr = arr.forEach((value)=>{
+	var newArr = arr.map((value)=>{
     		value*2;
 	});
 	newArr
 	//结果为[undefined,undefined,undefined,undefined,undefined]
 	当在回调函数中return值时，该值会被放入返回的数组中
 如：	var arr = [1,2,3,4,5];
-	var newArr = arr.forEach((value)=>{
+	var newArr = arr.map((value)=>{
     		return value*2;
 	});
 	newArr
@@ -150,7 +150,7 @@ arr.forEach(function(value,index，arr){
 	slice既可以处理字符串，又可以处理数组。
 	var str = 'sadfasf';   str.slice(1,3);
 	返回的值为切下来的值，不会改变原始值。
-	join是用来处理数组，按照指定规则把数组变为字符串，如果传递的参数为空时，将返回不带逗号的字符串。
+	join是用来处理数组，按照指定规则把数组变为字符串，如果传递的参数为空时，将返回不带逗号的字符串，如果不传参数时，
 	var arr = [1111,2222,3333,4444]; arr.join("");
 
 	(重点：上面的方法中，只有splice会改变调用对象，其余方法都不会改变原来的值。)
@@ -167,14 +167,15 @@ arr.forEach(function(value,index，arr){
 		window.location.hostname:获取当前URL的主机名（域名）
 		window.location.pathname:获取URL中的文件路径，就是当前页面的路径。
 		window.location.search:获取URL中的参数
-	2、cookie  session  localStorage  sessionStorage等的用法和比较。(localStorage和sessionStorage保存数据都是保存在本地浏览器中，而且保存的数据是保存在当前浏览器域名下。)
+	2、cookie  session  localStorage  sessionStorage等的用法和比较。(localStorage和sessionStorage保存数据都是保存在本地浏览器中，意思是保存的数据不能跨浏览器，而且保存的数据是保存在当前浏览器域名下。)
 	（https://segmentfault.com/a/1190000017063470）
 		cookie是服务器发送给客服端的特殊信息，存储在客服端，比如用户登陆时，后端会保存用户登陆信息，返回信息存储在cookie中。 cookie可以设置保留时间，如果没有设置保留时间，则关闭浏览器就会失效。每次发送请求都会带上cookie信息。cookie的存储容量小，且每次发送请求时都会携带发送cookie，因此H5新特性中的Web Storage很好的解决了这个问题。
 
 （https://blog.csdn.net/qq_31741481/article/details/88054069）
-	localSotrage是本地永久储存，关闭浏览器数据不会被清除，只有主动删除才会失效，但是不能跨浏览器，存储在chrome浏览器中就只在Chrome浏览器中有效，在IE浏览器中无效。（在同一个浏览器中，同一个域下localStorage信息是共享的）
-	sessionStorage也是本地存储，但是浏览器或者tab页关闭就会被清除，在不同的tab页中不能共享sessionStorage。（同一个tab页中，同一个下sessionStorage是共享的）
-		localStorage是将需要保存的信息存储在本地的硬件设备上，且属于永久存储，关闭浏览器数据不会被清除，只有主动删除才会失效。存储的大小为5MB左右。localStoragese：常用于长期登录（+判断用户是否已登录），适合长期保存在本地的数据（项目中用到过，新生开卡功能，流程比较复杂，有几个页面需要填写信息，为了方便用户，如果用户填写了几个页面信息，但没填写完，突然有事电脑关了，下次进入开卡时，会提示你是否继续申请开卡。这个功能就是用localStorage实现的。在第一次提交主页信息时，利用localStorage保存了一个后台返回的token码，跟电话号码一一对应。当下次进入开卡主页时，用localStorage.getItem("token"),如果存在token码，就会走另外一套逻辑，用token码call后台接口，返回上次提交的数据，然后渲染在页面上。)
+	localSotrage是本地永久储存，关闭浏览器数据不会被清除，只有主动删除才会失效，储存的数据在浏览器中，在同一个浏览器的不同tab页中同一个域下可以共享localStorage，但是不能跨浏览器。而且储存的数据只能是字符串类型，当需要储存对象时，需要将对象转化为json字符串。（在同一个浏览器中，同一个域下localStorage信息是共享的，相当于是个全局变量。）
+	sessionStorage也是本地存储，属于会话级别的储存，关闭浏览器数据就会被清除，在同一个浏览器的不同tab页中同一个域名下不能共享sessionStorage的数据。（同一个tab页中，同一个域下sessionStorage是共享的）
+		
+	localStorage是将需要保存的信息存储在本地的硬件设备上，且属于永久存储，关闭浏览器数据不会被清除，只有主动删除才会失效。存储的大小为5MB左右。localStoragese：常用于长期登录（+判断用户是否已登录），适合长期保存在本地的数据（项目中用到过，新生开卡功能，流程比较复杂，有几个页面需要填写信息，为了方便用户，如果用户填写了几个页面信息，但没填写完，突然有事电脑关了，下次进入开卡时，会提示你是否继续申请开卡。这个功能就是用localStorage实现的。在第一次提交主页信息时，利用localStorage保存了一个后台返回的token码，跟电话号码一一对应。当下次进入开卡主页时，用localStorage.getItem("token"),如果存在token码，就会走另外一套逻辑，用token码call后台接口，返回上次提交的数据，然后渲染在页面上。)
 		sessionStorage存储的数据只在当前浏览器窗口有效，关闭浏览器窗口会被销毁，存储大小为5MB。sessionStorage：敏感账号一次性登录；
 
 localStorage的用法：
@@ -207,8 +208,8 @@ localStorage的用法：
 	 console.log('c');
 
 八、对OOP的理解。（面向对象的好处：代码整洁井然有序，便于后期维护）（https://igtb.bochk.com/index_sc.html）
-
-	我上一段工作经历就是面向对象编程的。面向对象编程与面向过程编程之间的差别，面向过程编程是流程化的，一步一步分析问题，一步一步实现问题，而面向对象编程是抽象化的，抽象一个类，里面有解决问题的方法和数据，需要实现什么功能直接调用就可以了。面向对象有三大特性。第一个特性封装：隐藏对象的属性和实现细节，对外提供访问方式，提高代码的复用率和可维护性，并且能提高团队开发效率。像我提供的上传的方法，只提供一个接口，说明使用方法，不需要别人知道怎么实现的。第二个特性继承：继承是指可以让某个类型的对象获得另一个类型的对象的属性和方法，比较常用的方法是使用call()方法或原型链的方式实现继承。原型链方式继承比较复杂，简单点说可以把你想要继承的构造函数的原型合并到自身的原型中。我上个项目就是使用原型链继承方式，在当前页面执行一系列的框架初始化方法。(合并两个对象的方法Object.assign({},obj1,obj2)和$.extend一样)我们这个项目是在当前页面js中使用call()方法来继承框架的类里面的方法，然后用$.extend来继承框架类中原型上的方法和属性。多态就是不同对象调用同一方法可以产生不同的效果,比如子对象重写一个跟父对象相同的方法，这个很少用到，跟多态容易搞混的重载在项目中到是用的多，根据所传参数个数不同执行不同的操作。
+	面向对象编程与面向过程编程之间的差别，面向过程编程是流程化的，一步一步分析问题，一步一步实现问题，而面向对象编程是抽象化的，抽象一个类，里面有解决问题的方法和属性，需要实现什么功能直接调用就可以了。面向对象有三大特性。第一个特性封装：隐藏对象的属性和实现细节，不允许外部程序直接访问内部属性，但可以对外提供访问方式，提高代码的复用率和可维护性，并且能提高团队开发效率。像我提供的上传的方法，只提供一个接口，说明使用方法，不需要别人知道怎么实现的。第二个特性继承：继承是指可以让某个类型的对象获得另一个类型的对象的属性和方法，比较常用的方法是使用call()方法或原型链的方式实现继承。原型链方式继承比较复杂，简单点说可以把你想要继承的构造函数的原型合并到自身的原型中。我上个项目就是使用原型链继承方式，在当前页面执行一系列的框架初始化方法。(合并两个对象的方法Object.assign({},obj1,obj2)和$.extend一样)我们这个项目是在当前页面js中使用call()方法来继承框架的类里面的方法，然后用$.extend来继承框架类中原型上的方法和属性。多态就是不同对象调用同一方法可以产生不同的效果,比如子对象重写一个跟父对象相同的方法，这个很少用到，跟多态容易搞混的重载在项目中到是用的多，根据所传参数个数不同执行不同的操作。
+	
 1.谈谈你对OOP的理解？
 OOP是面向对象编程，特征分别是封装、继承、多态、抽象。
 封装：封装是指将对象信息状态通过访问权限修饰符隐藏在对象内部，不允许外部程序直接访问，如果外部程序要访问对象内部，可以调用内部提供的get或set方法。简单来说，封装就是要找出某一类事务的公性然后提取出来。
@@ -269,8 +270,23 @@ inheritPrototype(subType, superType)；
 
 
 九、介绍一下必包。
-	闭包就是能读取其它函数作用域中变量的函数。闭包的原理就是作用域问题，当你访问某个变量时，会先在当前作用域下查找，如果当前作用域不存在就会在外层作用域中寻找，直到找到window作用域，而外层作用域访问不到内层作用域中的变量。我们知道，一般的方法执行之后内部变量都会被释放，但是当你在这个方法中返回一个内部函数，这个内部函数就可以访问外部函数的所有变量，因此执行外部函数之后，函数内的内部变量不就被释放。举个简单的例子，一次性定时器
+	闭包就是能读取其它函数作用域中变量的函数。闭包的原理就是作用域问题，当你访问某个变量时，会先在当前作用域下查找，如果当前作用域不存在就会在外层作用域中寻找，直到找到window作用域，而外层作用域访问不到内层作用域中的变量。我们知道，一般的方法执行之后内部变量都会被释放，但是当你在这个方法中返回一个内部函数，这个内部函数就可以访问外部函数的所有变量，因此执行外部函数之后，函数内的内部变量不会被释放。
 
+闭包的应用场景1：防抖函数（如输入框的搜索查询功能）
+
+$("#input").on("input",search(1000));
+
+function search(time){
+	var timer = null;
+ retrun function (){
+		clearTimout(timer);
+		timer = setTimout(()=>{
+
+		},time);
+	}
+}
+
+闭包的应用场景2：解决一次性定时器不能传参问题。
     setTimeout(function(param){
         alert(param)
     },1000)
@@ -287,15 +303,17 @@ inheritPrototype(subType, superType)；
 	闭包就是能够读取其他函数内部变量的函数
 	一般来说，函数作用域中的变量在函数外部是无法访问的，闭包可以理解为读取其它函数作用域中变量的函数，闭包可以将函数内部和函数外部连接起来。闭包的优点，可以读取函数内部的变量。
 
-十、原型和原型链。(Function函数是由Function函数生成的，所以Function函数对象的__proto__指向Function.prototype。JavaScript规定Object.prototype为原型链的顶端，Object.prototype.__proto__ =  null。JavaScript规定，Function.prototype.__proto__指向Object的原型。)
+十、原型和原型链。(Function函数是由Function函数生成的，所以Function函数对象的__proto__指向Function.prototype。JavaScript规定，Function.prototype.__proto__指向Object的原型。JavaScript规定Object.prototype为原型链的顶端，Object.prototype.__proto__ =  null。)
+（注意，当访问某个属性时，对象内部没有就会到__proto__属性中去寻找，但是绝对不会到prototype属性中去寻找。如给fun函数增加原型属性fun.prototype.getName = function(){},此时去访问fun对象中的属性getName为undefined。）
+（原型对象：每个函数都有个prototype属性，该属性指向的对象就是原型对象。）
+（https://www.jianshu.com/p/686b61c4a43d）
 	
 	每个函数都自带一个prototype属性，prototype属性指向一个对象，就是原型对象。每个对象自带一个__proto__属性，一般情况来说，这个__proto__属性指向生成当前实例的类的原型。当我们访问对象的一个属性时，它会先在自身中寻找，如果有则直接使用，如果没有就到__proto__所指的原型中找，如果原型中有则直接使用，如果没有就到原型的原型中寻找，直到找到Object对象的原型为止，Object的原型就是原型链的顶端。如创建一个构造函数Person，let一个变量people等于new Person，那么实例people中就有一个__proto__属性指向生成这个对象的类的原型，也就是构造函数的原型（在构造函数内部可以定义一些属性，这些属性会在实例化时保存在每个实例内部，比如Person中定义age和name等，可以在new时传入参数来实现各个实例产生不同的属性值，构造函数prototype属性指向的原型对象里面可以定义一些方法，这些方法是所有实例公用的，也就是实例__proto__所指向的对象。），普通函数的原型都是系统自动生成的‘object’类型的对象，竟然是对象，它里面同样有一个属性__proto__指向Object函数的原型，而Object函数的原型中__proto__属性是null，也就是原型链的顶端。	
 
 什么叫原型链：https://blog.csdn.net/qq_42019025/article/details/80708446。
 
-https://s1.51cto.com/images/blog/201902/19/3aac1f57ace09faf8d69b4aa11dc3ad6.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=
 
-十一、
+十一、sort函数
 	sort函数是对数组进行排序，依次取数组中的两个元素进行比较，就像冒泡排序样，sort函数接受一个回调函数作为参数，如果回调函数返回的值大于0，则a排到b的后面（大于0则a，b调换位置），如果回调函数的值等于0，则不换位置，如果回调函数的值小于0，则b排到a的后面（小于0则a，b位置不变）。
 
 	arr=[10,5,8,20,1000,2];
@@ -383,6 +401,9 @@ function chooseSort(arr) {
   }
 十四、快速排序
   快速排序采用的是递归方式实现。
+(concat的用法：concat是用来连接多个数组或者元素，不会改变原来的数组，返回一个新数组
+	如：arr.concat(num,arr1,arr2)。num为一个数字，
+)
 （注：js中几个取值方式：
 parseInt(num)保留整数部分，去掉小数部分。
 Math.random()取随机数。
@@ -510,6 +531,7 @@ echo $callback."(".json_encode($data).")";
 
 	使用typeof可以判断出基本类型，但是不能判断null、Array、Object。
 	typeof的用法：typeof(a) 或者 typeof a
+	如： typeof bool == "boolean"
 	console.log(typeof bool); //boolean
 	console.log(typeof num);//number
 	console.log(typeof str);//string
@@ -520,7 +542,7 @@ echo $callback."(".json_encode($data).")";
 	console.log(typeof fun);//function
 	console.log(typeof s1); //symbol
 
-	使用instanceof可以判断出数组，对象跟函数，其它类型无法判断。
+	使用instanceof可以判断出数组，对象跟函数，其它类型无法判断。（注意instanceof后面的Boolean不是字符串。）
 	console.log(bool instanceof Boolean);// false
 	console.log(num instanceof Number);// false
 	console.log(str instanceof String);// false
@@ -549,7 +571,7 @@ echo $callback."(".json_encode($data).")";
 	$.ajax({
             	url: 'upload_base64.php',
             	type: 'POST',
-            	data: { data: formData },
+            	data: formData,
             	dataType: 'json',
             	success: function (res) {
                 
@@ -586,11 +608,13 @@ echo $callback."(".json_encode($data).")";
 
 二十七、arguments的理解。
 
+	arguments是构造函数Arguments的实例对象，它不能显式创建，只有在非箭头函数中才有此属性，它是一个包含函数参数的对象。
+
 	arguments是函数内的Arguments的实例对象。arguments对象是所有（非箭头）函数中都可用的局部变量。
 	1.arguments对象和Function是分不开的。
 	2.因为arguments这个对象不能显式创建。
 	3.arguments对象只有函数开始时才可用。
-	arguments有个属性callee，该属性指向自身函数，arguments是一个对象，对象内部包含函数的实参，所以函数内部this指向arguments对象，如下输出 10，2.
+	arguments有个属性callee（使用方法arguments.callee()），该属性指向自身函数，arguments是一个对象，对象内部包含函数的实参，所以函数内部this指向arguments对象，如下输出 10，2.
 	var length = 10;
 	var obj = {"length":"arguments","getLength":function(){console.log(this.length)}};
 	function fn() {
@@ -599,7 +623,7 @@ echo $callback."(".json_encode($data).")";
 	var obj = { 
   		method: function(fn) {
     			fn();
-    			arguments[2].getName();
+    			arguments[0]();
   		}
 	};
 	obj.method(fn, 1, obj);
@@ -615,7 +639,23 @@ echo $callback."(".json_encode($data).")";
 	5、const定义的变量必须赋初始值，且值不能被改变，如果const定义的变量是个引用类型的值，属性可以改变。
 二十九、箭头函数和普通函数。
 
-	箭头函数this指向函数外的this，箭头函数不能使用new，箭头函数没有prototype属性，箭头函数没有arguments对象，使用...调用arguments。
+	箭头函数this指向函数外的this(注意：this在箭头函数中已经按照词法作用域绑定了，使用call时不能改变this指向，)，箭头函数不能使用new，箭头函数没有prototype属性，箭头函数没有arguments对象，使用...调用arguments。
+
+箭头函数this不能改变：
+例子：var obj = {
+    birth: 1990,
+    getAge: function (year) {
+        var b = this.birth; // 1990
+        var fn = (y) => y - this.birth; // this.birth仍是1990
+        return fn.call({birth:2000}, year);
+    }
+};
+var age = obj.getAge(2018); // 28
+
+箭头函数调用arguments的方法：(当箭头函数要使用参数时，可以在定义函数时加...就可以调用了。)
+例子： var fun = (...arge)=>{console.log(arge[0])};
+	fun(11,22,33); //11
+
 
 三十、es6中的Proxy。
 
@@ -631,6 +671,9 @@ var Pperson = new Proxy( person, {
 　　　　　　return Reflect.set(...arguments);
 　　　　}
 　　}
+  get: function(target, prop, value){
+	// target为被传入的对象，prop为获取当前的属性，value为当前值。
+  }
 });
 
 let p = new Proxy(target, handler);  中有两个参数，第一个是传入的目标对象，第二个是一个对象，里面可以有set、get之类的方法。注意，当执行new Proxy()后，改变原先的对象，代理后的对象也会改变，但是代理后的对象和原对象不相等。即person == Pperson  //false

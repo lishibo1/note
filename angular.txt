@@ -23,7 +23,7 @@
 	八个钩子函数分别为：ngOnChanges , ngOnInit , ngDoCheck , ngAfterContentInit , ngAfterContentChecked , ngAfterViewInit , ngAfterViewChecked , ngOnDestory。
 
 	ngOnChanges在数据绑定输入属性值发生变化时调用，比较常用在父组件给子组件传值发生改变时会调用。它的调用在ngOnInit之前。
-	ngOnInit只会调用一次，在组件初始化时调用，在constructor中只执行简单的数据初始化，而复杂的数据初始化一般可以在这里执行。
+	ngOnInit只会调用一次，在组件初始化时调用，在constructor中只执行简单的数据初始化，而复杂的数据初始化一般可以在这里执行，且在这里发送http请求。
 	ngDoCheck在第一次进入页面时会调用一次，后续angular发生脏值检测时会调用，包括属性值变化，有异步事件都会被调用，这个钩子函数被调用的次数会很多，因此写在这个钩子函数中的方法尽量要高效。
 	ngAfterContentInit只调用一次，组件内容初始化之后调用。
 	ngAfterContentChecked在第一次进入页面时会调用，后续每次组件内容发生变更之后调用。
@@ -32,7 +32,9 @@
 	ngOnDestory组件销毁前调用，主要作用是在组件销毁之前，执行一些清理操作，如：移除事件监听、清理定时器等。注销全局服务中的函数，避免内存泄漏。
 	（http请求可以放在ngOnInit中)
 
-3.双向数据绑定的原理。
+3.双向数据绑定的原理。(angular对常用的dom事件，xhr事件做了封装，因此会触发脏值检测。)
+
+	（触发脏值检测的条件：1、Dom事件。2、http请求。3、Location变更事件。4、定时器）
 
 	Angular双向数据绑定指数据发生变化时，会更新相应的视图，当视图发生变化时会更新相应的数据。Angular 采用的是“脏值检测”的方式。angular中设置了一个监听列队，用来监听数据变化时更新view，每当你给view视图上绑定东西时，如{{}}、ngModule、ngClass等操作时，就会把当前绑定的属性加入监听列队中，当浏览器接受到可以被angular context处理的事件时（如click等事件），就会触发这个循环列队，检查所有的数据是否有改变，如果检测到有数据变化，就会再次触发这个循环列队，再次触发这个循环是确保一个数据变化引起循环列队中其它的model变化而没被检测到，直到没有数据变化后，就不在触发循环列队，检测完成之后就会更新相应部分的view视图。这样当数据发生变化时就会更新视图。视图发生变化更新属性值时在解析模版时，如果解析到有ngmodel指令的元素时，就会给当前元素绑定一个事件，如input框会绑定一个oninput事件，当事件触发时就会把对应的属性值改变，从而实现视图发生变化时属性值也跟着变化。
 
@@ -65,9 +67,14 @@
 
 	a、创建一个组件: ng g component home(如果要在某个目录下创建组件，则需要cd到当前目录)
 
-7、angular实现路由的原理。博客地址：（https://blog.csdn.net/liushijun_/article/details/91468812）
-		
-	angular默认使用的路由机制是HTML5 History，HTML5 History中新增了pushState和replaceState方法，pushState方法可以向浏览器历史纪录栈顶增加一项历史纪录，这个方法可以改变url但不会发送http请求页面，（正常页面当window.location.href改变时，浏览器会检测到变化，向服务器发送http请求当前页面。）通过popstate监听浏览器URl的变化来更新视图。还有一种模式是hash模式，window.location中有一个hash属性，该属性的值是#本身以及它后面的字符，hash的改变也会在浏览器访问历史中增加记录，但hash的改变也不会向服务端发送请求，所以可以使用hashchange来监听hash的改变更新视图。我上个项目就是使用hash模式实现单页面应用的，angular8默认使用HTML5 History模式，但是当你进入到detail页面时，点击浏览器上的刷新按钮，就会向服务端发送请求，由于后端没有配置detail路由处理，就会报错404找不到当前资源。处理这个问题要么就是后端匹配不到就加载index.html，要么就是前端使用hash配置，当时解决这个问题就是我在app.module；里面匹配了使用hash模式。
+7、angular实现路由的原理。博客地址：（https://www.cnblogs.com/gaosirs/p/10606266.html）
+	
+	pushState的用法：window.history.pushState(data,title,url)
+	data：当浏览器跳转到新的状态时，将触发Popstate事件，该事件将携带这个参数的副本。
+	title：所添加记录的标题，现在浏览器不会用到。
+	url：所添加记录的url。
+	
+	angular默认使用的路由机制是HTML5 History，HTML5 History中有pushState和replaceState方法，pushState方法可以向浏览器历史纪录栈顶增加一项历史纪录，这个方法可以改变url但不会发送http请求页面，（正常页面当window.location.href改变时，浏览器会检测到变化，向服务器发送http请求当前页面。）通过popstate监听浏览器URl的变化来更新视图。还有一种模式是hash模式，window.location中有一个hash属性，该属性的值是#本身以及它后面的字符，hash的改变也会在浏览器访问历史中增加记录，但hash的改变也不会向服务端发送请求，所以可以使用hashchange来监听hash的改变更新视图。我上个项目就是使用hash模式实现单页面应用的，angular8默认使用HTML5 History模式，但是当你进入到detail页面时，点击浏览器上的刷新按钮，就会向服务端发送请求，由于后端没有配置detail路由处理，就会报错404找不到当前资源。处理这个问题要么就是后端匹配不到就加载index.html，要么就是前端使用hash配置，当时解决这个问题就是我在app.module；里面匹配了使用hash模式。
 
 8、angular中父子组件传值。
 
