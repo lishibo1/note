@@ -85,3 +85,24 @@
 			onclick(){this.outer.emit("传数据出去")}
 			
 			父组件中(outer)="getNum($event)"
+
+9、angular中监听单个属性的变化。（https://segmentfault.com/q/1010000022139047/）
+有两种方法
+方法一：使用钩子函数ngDoCheck(此钩子函数在发生脏值检测时就会被调用，因此使用此方法效率低，随时都会触发此钩子函数。)
+方法二：使用angular官方引入了rxJS来解决属性监听问题
+如：在commonService中
+public language = new BehaviorSubject<string>("tc");  //此处表示默认语言是"tc"
+
+当在头部组件中点击切换语言成英文时：
+this.commonService.language.next("en")  //此时表示将commonService的属性language设置成"en"
+
+点击切换语言之后，在home页面监听language的变化来切换语言:
+ngOnInit(){
+	this.commonService.language.subscribe(()=>{
+		//此处执行切换语言操作。
+	});
+}
+
+
+
+

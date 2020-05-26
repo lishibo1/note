@@ -137,7 +137,7 @@ arr.forEach(function(value,index，arr){
 五、window中常用的处理函数split、splice、slice。
 
 	split是用来处理字符串的，split中参数是打散字符串的规则，如下意思为碰到str中有逗号时就拆开，显然返回的数组只有一项。
-	var str = “sdf”； str.split(',') 
+	var str = “sdf”； str.split(',') (注意，打散的参数在数组中不存在)
 	splice是用来处理数组的。splice会改变原来的数组，返回的值为被删除的部分项。
 	var arr = [11,22,33,44,55];  
 	var arr1 = arr.splice(1,2,12,34,45);
@@ -167,7 +167,7 @@ arr.forEach(function(value,index，arr){
 		window.location.hostname:获取当前URL的主机名（域名）
 		window.location.pathname:获取URL中的文件路径，就是当前页面的路径。
 		window.location.search:获取URL中的参数
-	2、cookie  session  localStorage  sessionStorage等的用法和比较。(localStorage和sessionStorage保存数据都是保存在本地浏览器中，意思是保存的数据不能跨浏览器，而且保存的数据是保存在当前浏览器域名下。)
+	2、cookie  session  localStorage  sessionStorage等的用法和比较。(localStorage和sessionStorage保存数据都是保存在本地浏览器中，意思是保存的数据不能跨浏览器，而且保存的数据是保存在当前浏览器域名下。但是localStorage可以跨进程，sessionStorage不能跨进程，也就是说，sessionStorage保存的数据关闭当前tab也就会被销毁。持久性cookie数据储存在本地硬盘，可以跨进程，但是不能跨浏览器。回话级cookie数据储存在浏览器中，在Chrome中可以跨进程。)
 	（https://segmentfault.com/a/1190000017063470）
 		cookie是服务器发送给客服端的特殊信息，存储在客服端，比如用户登陆时，后端会保存用户登陆信息，返回信息存储在cookie中。 cookie可以设置保留时间，如果没有设置保留时间，则关闭浏览器就会失效。每次发送请求都会带上cookie信息。cookie的存储容量小，且每次发送请求时都会携带发送cookie，因此H5新特性中的Web Storage很好的解决了这个问题。
 
@@ -440,6 +440,7 @@ quickSort(arr) {
 十八、后端session和cookie。（https://www.zhihu.com/question/19786827/answer/84540780）
 (Session是在服务端保存的一个数据结构，用来跟踪用户的状态，这个数据可以保存在集群、数据库、文件中；
 Cookie是客户端保存用户信息的一种机制，用来记录用户的一些信息，也是实现Session的一种方式。)
+（注意：cookie是不能跨浏览器的）
 
 	cookie是服务器发送给客服端的特殊信息，存储在客服端,当每个用户第一次访问登陆接口时（第一次指在新打开的浏览器中访问，如果访问后关闭当前窗口新开一个窗口继续访问，session还保存在，后端设置session保存时间一般是三十分钟，关掉浏览器当前域下的cookie才会被删除），后端会生成一个session ID来记录当前用户的状态并开辟一个内存空间来处理当前用户的数据，并在请求返回中将session id写入浏览器cookie，当浏览器访问这个域下面的任何service时，都会携带cookie信息发送给后端，后端根据这个session id来在指定内存中处理当前用户数据。
 	cookie分为会话cookie和持久cookie，会话cookie在会话结束时就会消失，会话结束指关闭浏览器，会话cookie保存在浏览器的内存中，且关闭当前tab cookie不会消失，在IE中cookie不能跨进程，chrom中可以跨进程。
@@ -762,4 +763,38 @@ let p = new Proxy(target, handler);  中有两个参数，第一个是传入的�
 
 三十五、当调用函数时，函数中变量作用域是在当前定义函数的作用域，而不是在调用位置的作用域。
 
-三十五、有哪些前端优化经验。
+三十六、有哪些前端优化经验。
+
+三十七、原生js获取元素和jQuery获取元素的方法。
+Js:
+
+Id：document.getElementById("id")
+Name: document.getElementByName("name") //返回值是一个类数组。
+Class: document.getElementByClassName("class") //返回值是一个类数组。
+通过选择器获取一个元素： document.querySelector("#id .class") //返回值只获取到第一个元素。
+通过选择器获取一组元素： document.querySelectorall("#id .class") //返回所有符合此选择器的元素。
+
+jQuery：
+
+Id: $("#id")
+Name: $("div input[name='Name']")   //此处[]中的为条件，假如选中div中的class='Class'的input框$("div input[class='Class']")。
+P标签中的第一个span:  $("p span:first-child")。
+
+
+三十八、原生js设置css样式和jQuery设置css样式的方法。（注意：jQuery对选中的元素做操作时调用的是函数，所以传参时跟使用函数一样的形式。）
+Js:
+
+element.style.fontSize = "17px"; //此处style是个对象，就是给对象中的属性赋值。
+element.style.cssText = "color: red; line-height: 20px;" //此处style中有个cssText属性，此属性可以为选中的元素增加样式。
+删除某个css属性：element.removeProperty("color") //该方法是删除当前元素的color属性，返回值为被删除的属性值。
+
+jQuery：
+
+$("#id").css("color")  //返回被选中的元素的color值
+$("#id").css("color","red")。
+$("#id").css({"color":"red","font-size":"25px"})
+
+三十九、jQuery的基本操作
+
+给某个属性赋值：$("img").attr({"src":"test.jpg","alt":"test Image"}).
+添加class和删除class： $("p").addClass("selected");   $("p").removeClass("selected");
