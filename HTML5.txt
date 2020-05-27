@@ -1,0 +1,26 @@
+1、video标签 (video 元素允许多个 source 元素。source 元素可以链接不同的视频文件。浏览器将使用第一个可识别的格式：)
+<video width="320" height="240" controls="controls">
+  <source src="movie.ogg" type="video/ogg">
+  <source src="movie.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+
+2、audio标签（audio 元素允许多个 source 元素。source 元素可以链接不同的音频文件。浏览器将使用第一个可识别的格式：）
+<audio controls="controls">
+  <source src="song.ogg" type="audio/ogg">
+  <source src="song.mp3" type="audio/mpeg">
+Your browser does not support the audio tag.
+</audio>
+
+3、拖放。
+
+4、canvas和SVG
+
+5、地理定位：
+
+6、localStorage、sessionStorage
+
+7、Web Workers
+
+8、input多种输入类型：
+type：email、url、number、range、Date等。

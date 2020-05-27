@@ -798,3 +798,49 @@ $("#id").css({"color":"red","font-size":"25px"})
 
 给某个属性赋值：$("img").attr({"src":"test.jpg","alt":"test Image"}).
 添加class和删除class： $("p").addClass("selected");   $("p").removeClass("selected");
+
+四十、es6中的class语法（ES6 的class可以看作只是一个语法糖，它的绝大部分功能，ES5 都可以做到，新的class写法只是让对象原型的写法更加清晰、更像面向对象编程的语法而已。）
+
+如 es5：
+function Point(x, y) {
+  this.x = x;
+  this.y = y;
+}
+
+Point.prototype.toString = function () {
+  return '(' + this.x + ', ' + this.y + ')';
+};
+
+var p = new Point(1, 2);
+
+es6：class语法（跟java语法类似，只是不需要访问修饰符，注意：es5中所有在构造函数中定义的属性都要放在class语法的constructor构造函数中，且类中的方法不需要function申明，实例化后的对象都是公用一个原型，如果class语法中没有constructor则会隐式生成。）
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  toString() {
+    return '(' + this.x + ', ' + this.y + ')';
+  }
+}
+
+Class语法也可以实现继承，和java语法一样，使用extends来继承,在子类构造器中使用super()方法调用父类构造器，且super()方法必须放在子类构造器的第一行。
+class Parent{
+	constructor(a,b){
+		this.a = a;
+		this.b = b;
+	}
+}
+
+
+class Child extends Parent {
+  constructor(x, y, color) {
+    super(x, y); // 调用父类的constructor(x, y)
+    this.color = color;
+  }
+
+  toString() {
+    return this.color + ' ' + super.toString(); // 调用父类的toString()
+  }
+}
