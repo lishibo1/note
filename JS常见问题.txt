@@ -1,3 +1,6 @@
+
+（学习对象：https://www.flqin.com/）
+
 一.JS中几种循环的用法和比较
 	
 	a. for-in 循环 : 语句用于遍历数组或者对象的属性（对数组或者对象的属性进行循环操作）for-in循环主要用来循环对象，取到的值是下标key，获取当前属性的值需要用obj[key]来获取。
@@ -442,6 +445,10 @@ quickSort(arr) {
 Cookie是客户端保存用户信息的一种机制，用来记录用户的一些信息，也是实现Session的一种方式。)
 （注意：cookie是不能跨浏览器的）
 
+	cookie是服务器返回，存储在客户端的一些信息。由于http协议是无状态的，cookie就是一种会话状态跟踪技术，比如做某个操作需要登录后才能有效操作，但由于http是无状态协议，并不知道用户是否登录，也就是说你需要告诉服务器你已经登录，你可以在访问下个接口时带上登录信息证明你已经登录，那每次都带参数就麻烦了，所以可以在你登录后将登录信息保存在cookie中，在请求返回中将cookie写入浏览器，后续所有请求都会携带cookie去服务器比较。
+
+	session：session是服务器端生成，保存在服务器端的信息，session的工作原理：当客服端第一次访问，就是第一次调用setSession时，服务器端会生成一个sessionId（32位随机数）和一个session对象，生成的session对象被保存在session  Map中，key值就是sessionid ，value值是当前session对象，在请求响应中会将sessionid写入浏览器cookie中，key值为jsessionid，value值为32位随机数，之后同一个回话中的请求都会将cookie中的sessionid发送到服务器端，服务器会拿这个sessionid去Map中找对应的session，因此不会拿错数据。（这就是session跟踪）
+
 	cookie是服务器发送给客服端的特殊信息，存储在客服端,当每个用户第一次访问登陆接口时（第一次指在新打开的浏览器中访问，如果访问后关闭当前窗口新开一个窗口继续访问，session还保存在，后端设置session保存时间一般是三十分钟，关掉浏览器当前域下的cookie才会被删除），后端会生成一个session ID来记录当前用户的状态并开辟一个内存空间来处理当前用户的数据，并在请求返回中将session id写入浏览器cookie，当浏览器访问这个域下面的任何service时，都会携带cookie信息发送给后端，后端根据这个session id来在指定内存中处理当前用户数据。
 	cookie分为会话cookie和持久cookie，会话cookie在会话结束时就会消失，会话结束指关闭浏览器，会话cookie保存在浏览器的内存中，且关闭当前tab cookie不会消失，在IE中cookie不能跨进程，chrom中可以跨进程。
 	持久cookie保存在硬盘上，关闭浏览器再次打开，只要cookie没有过期，cookie信息还保存在，持久cookie可以跨进程。
@@ -844,3 +851,63 @@ class Child extends Parent {
     return this.color + ' ' + super.toString(); // 调用父类的toString()
   }
 }
+
+
+四十一、then()的使用
+
+function a() {
+    return new Promise((e, t) => {
+      setTimeout(() => {
+        e(111);
+      }, 1000);
+    })
+      .then(res => {
+          debugger
+        console.log('略略', res);
+        setTimeout(() => {
+            debugger
+          return new Promise((ee, tt) => {
+            ee('hh');
+          }).then(res2 => {
+            console.log('哈哈', res2);
+            setTimeout(() => {
+              return 'iii';
+            }, 2000);
+          });
+        }, 5000);
+        setTimeout(() => {
+            debugger
+          return Promise.resolve(999999);
+        }, 0);
+      })
+      .then(res3 => {
+        setTimeout(() => {
+          console.log('呵呵', res3);
+          return Promise.resolve(565);
+        }, 0);
+        //                 return Promise.resolve(565);
+      })
+      .catch(() => {
+        console.log(9998);
+      });
+  }
+  a()
+    .then(function(res) {
+        debugger
+      console.log('嗯嗯', res);
+      return 222;
+    })
+    .then(function(res) {
+      console.log('啊啊', res);
+    })
+    .catch(function(res) {
+      console.log(666, res);
+    });
+
+//略略 111
+嗯嗯 undefined
+啊啊 222
+呵呵 undefined
+哈哈 hh
+
+解释：方法的执行顺序是先执行a函数中的两个then()方法，后执行a()函数后面的then()方法。当then()方法中没有返回值时，继续执行then()后面的then()方法，当有返回值时，返回值会传给下一个then()，当返回setTimout()时其实是返回的setTimout的地址，且不会等待setTimout的执行，当返回的是Promise时，会等待Promise的执行。
