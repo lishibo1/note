@@ -1,0 +1,12 @@
+搭建项目的结构：src目录下有app和assets文件夹，app文件夹放需要些的业务代码，assets文件夹下放第三方插件和img等。  App文件夹下有components组件，为项目需要用到的公共组件，page问项目各个页面业务代码，service放公共服务代码。
+公共配置：配置外部插件是在angular.json文件中配置对应插件的css和js路径。开发公共组件包括input组件select组件step组件等。
+搭建公共服务：http请求，包括同时发送多个请求，使用Observable.forkJoin([])封装,Observable.forkJoin()就相当于promise.all([])等所有请求都返回结果时在执行回调函数。
+解决多语言问题：
+node.js搭建假数据：
+配置代理服务：
+解决session问题：
+单页面使用hash：
+上传功能封装：
+xss攻击：
+公共弹窗封装：
+了解http：
