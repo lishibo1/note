@@ -527,15 +527,18 @@ echo $callback."(".json_encode($data).")";
 
 二十三、js中判断数据的类型。
 
-	使用Object.prototype.toString.call(data)可以判断出所有类型，得出的值是一个数组。
-	console.log(Object.prototype.toString.call(123));    //[object Number]
-	console.log(Object.prototype.toString.call('123'));    //[object String]
-	console.log(Object.prototype.toString.call(undefined));    //[object Undefined]
-	console.log(Object.prototype.toString.call(true));    //[object Boolean]
-	console.log(Object.prototype.toString.call({}));    //[object Object]
-	console.log(Object.prototype.toString.call([]));    //[object Array]
-	console.log(Object.prototype.toString.call(function(){}));    //[object Function]
-	console.log(Object.prototype.toString.call(null));    //[[object Null]]
+	使用Object.prototype.toString.call(data)可以判断出所有类型，得出的值是一个字符串。
+
+	console.log(Object.prototype.toString.call(123).slice(8,-1)) // "Number"
+
+	console.log(Object.prototype.toString.call(123));    //"[object Number]"
+	console.log(Object.prototype.toString.call('123'));    //"[object String]"
+	console.log(Object.prototype.toString.call(undefined));    //"[object Undefined]"
+	console.log(Object.prototype.toString.call(true));    //"[object Boolean]"
+	console.log(Object.prototype.toString.call({}));    //"[object Object]"
+	console.log(Object.prototype.toString.call([]));    //"[object Array]"
+	console.log(Object.prototype.toString.call(function(){}));    //"[object Function]"
+	console.log(Object.prototype.toString.call(null));    //"[object Null]"
 
 	使用typeof可以判断出基本类型，但是不能判断null、Array、Object。
 	typeof的用法：typeof(a) 或者 typeof a
@@ -726,7 +729,7 @@ let p = new Proxy(target, handler);  中有两个参数，第一个是传入的�
 
 	懒加载用在当页面元素丰富，图片比较多，页面比较高时，为了防止资源加载造成页面卡顿，可以先把图片地址放在自定义属性中储存，当页面滚动到显示当前图片的位置时，将图片地址改为正确地址。
 
-	节流函数：当事件频繁触发时，为了减轻服务器压力，可以设置固定时间在发送请求。
+	节流函数：当事件频繁触发时，为了减轻服务器压力，可以设置固定时间在发送请求。（本质就是减少请求的发送）
 	function throttle(lazyTime, Fuc){
                 var lastTime = null //记录上次时间
                 return function(){
@@ -741,6 +744,23 @@ let p = new Proxy(target, handler);  中有两个参数，第一个是传入的�
                 }
             }
             window.onscroll = throttle(50, lazyload) //事件回调是个闭包
+
+	节流函数升级版，理解节流就是减少请求发送后，可以定义一个flag，请求发送之后改变flag的值
+	
+	function throttle(time){
+		var flag = false;
+		return function(){
+			if(flag){
+				return;
+			}
+			flag = true;
+			setTimout(()=>{
+				Fun();
+				flag = false;
+			},time);
+		}
+	}
+	window.onscroll = throttle(50);
 
 	防抖函数：当持续触发某个事件时，为了减轻服务器压力，当一定时间内不在触发事件时会调用函数。
 	// 防抖函数，就是指触发事件后在 n 秒内函数只能执行一次，如果在 n 秒内又触发了事件，则会重新计算函数执行时间。
@@ -911,3 +931,135 @@ function a() {
 哈哈 hh
 
 解释：方法的执行顺序是先执行a函数中的两个then()方法，后执行a()函数后面的then()方法。当then()方法中没有返回值时，继续执行then()后面的then()方法，当有返回值时，返回值会传给下一个then()，当返回setTimout()时其实是返回的setTimout的地址，且不会等待setTimout的执行，当返回的是Promise时，会等待Promise的执行。
+
+四十二、处理数组的函数。
+1、concat()
+concat()方法用于连接两个或多个数组,concat不会改变原数组，返回新数组。
+例1、 var a = [1,2,3];
+document.write(a.concat(4,5));  // 1,2,3,4,5
+例2、var arr = new Array(3)
+arr[0] = "George"
+arr[1] = "John"
+arr[2] = "Thomas"
+
+var arr2 = new Array(3)
+arr2[0] = "James"
+arr2[1] = "Adrew"
+arr2[2] = "Martin"
+
+var arr3 = new Array(2)
+arr3[0] = "William"
+arr3[1] = "Franklin"
+
+document.write(arr.concat(arr2,arr3))  // George,John,Thomas,James,Adrew,Martin,William,Franklin
+
+在es6中可以使用...语法来合并数组
+例3、var arr = new Array(3)
+arr[0] = "George"
+arr[1] = "John"
+arr[2] = "Thomas"
+
+var arr2 = new Array(3)
+arr2[0] = "James"
+arr2[1] = "Adrew"
+arr2[2] = "Martin"
+
+var arr3 = new Array(2)
+arr3[0] = "William"
+arr3[1] = "Franklin"
+[...arr, ...arr2, ...arr3];
+
+2、copyWithin()方法浅复制数组的一部分到同一数组中的另一个位置（在复制时，并不是在target位置插入start-end段，而是从target位置开始，用start-end段来覆盖数组中的元素。），并返回它（会改变原数组的值，但是不会改变原数组的长度）。
+copyWithin(target,start,end)有三个参数,参数值都是下标，也是含头不含尾。
+target：目的起始位置,即需要被覆盖的起始位置。
+start：复制源的起始位置。
+end：复制源的结束位置，如果省略则位置是arr.length-1。
+
+3、every()方法，用于检测数组所有元素是否都符合指定条件，如果都符合则返回true，如果有一项不符合则返回false，且剩余项不在做比较。
+Every中有一个参数为回调函数，回调函数中可以有三个参数，value、index、arr，value为必须参数。(此方法不改变原数组)
+例子：检查数组中是否每一项都大于18
+var ages = [32, 33, 16, 40];
+ages.every((value,index,arr)=>{
+	return value > 18; // 此处必须有return语句
+});   // false
+
+4、fill()方法，使用固定值填充数组，fill(value,start,end)有三个参数，value为必填参数，是需要填充的值，start为选填参数，表示需要填充的起始位置，end为选填参数，表示填充的末位置（含头不含尾），当没有end参数时，end默认为arr.length。(此方法会改变原数组)
+实例：填充 "Runoob" 到数组的最后两个元素：
+
+var fruits = ["Banana", "Orange", "Apple", "Mango"];
+fruits.fill("Runoob", 2, 4); // Banana,Orange,Runoob,Runoob
+
+5、filter()方法，创建一个新的数组，新数组中的元素是通过检查指定数组中符合条件的所有元素。filter有一个参数为回调函数，回调函数有三个参数，value、index、arr，其中value为必须参数。（该方法不会改变原数组，返回一个新数组）
+实例：返回数组 ages 中所有元素都大于 18 的元素:
+var ages = [32, 33, 16, 40];
+ages.filter((value,index,arr)=>{
+	return value>18;
+}) //32,33,40
+
+四十三、数组的拷贝方法。
+数组的拷贝有深拷贝和浅拷贝的说法。
+1、如果数组是一维数组，且数组中的每个元素都不是引用类型，则可以使用slice(),和concat()方法进行拷贝。
+例1、var arr=["fdsa","fadsf","fdagrr",3213];
+var arr1= arr.slice(0,arr.length-1);
+var arr2= arr.concat();
+此时对数组arr的拷贝为深拷贝。
+
+2、当数组不是一维数组或者数组的元素为引用类型时，使用slice和concat方法进行拷贝为浅拷贝
+如：var arr=["fdsa","fadsf",{"name":"lishibo"},3213];
+var arr1= arr.slice(0,arr.length-1);
+arr1[2].name="liuwenjing";
+Console.log(arr,arr1) // 都为["fdsa","fadsf",{"name":"liuwenjing"},3213]
+当数组元素为引用类型时，使用slice和concat拷贝数组就是浅拷贝，拷贝后的数组指向不同地址，但是数组中引用类型元素拷贝的是地址，所以改变arr1中的name属性值时，arr中属性值也会改变。
+
+3、当数组中元素存在引用类型时，可以使用JSON.stringify和JSON.parse来对数组拷贝（当数组中某个元素是函数时，则不能拷贝）。
+如：var arr=["fdsa","fadsf",{"name":"lishibo"},3213];
+var arr1 = JSON.parse(JSON.stringify(arr));
+
+4、当数组中存在函数时，则不能使用JSON.stringify和JSON.parse来拷贝，应该使用循环来拷贝。
+var obj = {
+    x: 1,
+    y: {
+        a: 1,
+        b: 0,
+        c: [1, 2, 3]
+    }
+};
+
+function getClass(o) { //判断数据类型
+    return Object.prototype.toString.call(o).slice(8, -1);
+}
+
+function deepCopy(obj) {
+    var result, oClass = getClass(obj);
+
+    if (oClass == "Object") result = {}; //判断传入的如果是对象，继续遍历
+    else if (oClass == "Array") result = []; //判断传入的如果是数组，继续遍历
+    else return obj; //如果是基本数据类型就直接返回
+
+    for (var i in obj) {
+        var copy = obj[i];
+
+        if (getClass(copy) == "Object") result[i] = deepCopy(copy); //递归方法 ，如果对象继续变量obj[i],下一级还是对象，就obj[i][i]
+        else if (getClass(copy) == "Array") result[i] = deepCopy(copy); //递归方法 ，如果对象继续数组obj[i],下一级还是数组，就obj[i][i]
+        else result[i] = copy; //基本数据类型则赋值给属性
+    }
+
+    return result;
+}
+
+var obj2 = deepCopy(obj);
+console.log(obj2);
+
+5、在es6之后，对象和数组的最简单拷贝方法可以使用...语法，如拷贝数组。
+var arr=["fdsa","fadsf",{"name":"lishibo"},3213];
+var arr1 = [...arr];
+
+四十四、对象的拷贝方法。
+1、json方法
+适合情况：
+ JSON对象的深度克隆。方法是先JSON.stringify() 转为json字符串， 再JSON.parse() 转为json数组
+缺点：
+  a. 如果你的对象里有函数, 函数无法被拷贝下来
+  b. 无法拷贝copyObj对象原型链上的属性和方法
+2、如上使用循环拷贝。
+3、如上使用...语法拷贝。
