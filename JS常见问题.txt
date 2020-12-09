@@ -996,6 +996,155 @@ ages.filter((value,index,arr)=>{
 	return value>18;
 }) //32,33,40
 
+6、find() 方法返回通过测试（函数内判断）的数组的第一个元素的值，当找到符合条件的值时，不在继续循环后面的项。
+例子：var arr = [123,321,312,43,54];
+var value = arr.find((value,index,arr)=>{
+	return value > 314;
+}) //321
+
+7、findIndex() 方法返回传入一个测试条件（函数）符合条件的数组第一个元素位置,当找到符合条件的值时，不在继续循环后面的项。
+例子：var arr = [123,321,312,43,54];
+var value = arr.find((value,index,arr)=>{
+	return value > 314;
+}) //1
+
+8、flat()，Array.prototype.flat()
+在Array的显示原型下有一个flat方法，可以将多维数组，降维，传的参数是多少就降多少维，此方法生成一个新数组，不会改变原来数组。
+例子：
+var array1 = [1, 2, [3, 4], [[5, 6]], [[[7, 8]]], [[[[9, 10]]]]];
+var array2 = array1.flat(2);
+// array2: [1, 2, 3, 4, 5, 6, [7, 8], [[9, 10]]]
+当传的参数为Infinity。
+
+手动实现flat函数。
+var arr=[32,312,[312,312],[[312,4234]],[[[3,3,3]]],[[[[4,4,4]]]],[[[[[5,5,5]]]]]];
+Array.prototype.myFlat = function(num){
+  var type = checkType(this);
+  if(type != "Array"){
+    return;
+  }
+  if(num == 0){
+    return this;
+  }
+  var result = [];
+  this.forEach(item => {
+    var innerType = checkType(item);
+    if(innerType != "Array"){
+      result.push(item);
+    } else {
+      var num1 = num - 1;
+      // result.push(...item.myFlat(num1));   es6
+      result = result.concat(item.myFlat(num1));  // es5
+    }
+  });
+  return result; 
+}
+
+function checkType(obj){
+  return Object.prototype.toString.call(obj).slice(8,-1);
+};
+arr.myFlat(3);  //[32, 312, 312, 312, 312, 4234, 3, 3, 3, [4,4,4], [[5,5,5]]]
+
+9、flatMap()方法和就相当于flat(1)和map()的结合体，flatMap()方法有一个参数为回调函数，在返回的数组中将会被降低一维,flatMap方法不会改变原数组。
+例子：const scattered = [ "my favorite", "hamburger", "is a", "chicken sandwich" ];
+const huh = scattered.map( chunk => chunk.split( " " ) );
+console.log( huh ); // [ [ "my", "favorite" ], [ "hamburger" ], [ "is", "a" ], [ "chicken", "sandwich" ] ]
+
+const better = scattered.flatMap( chunk => chunk.split( " " ) );
+console.log( better ); // [ "my", "favorite", "hamburger", "is", "a", "chicken", "sandwich" ]
+
+10、includes()方法用来判断一个数组是否包含一个指定的值，根据情况，如果包含则返回true，否则返回false，（includes经常用于字符串检测是否存在某个字符）。
+
+例子1：var pets = ['cat', 'dog', 'bat'];
+console.log(pets.includes('cat'));  // true
+
+例子2：var pets = ['cat', 'dog', 'bat'];
+console.log(pets.includes('cat',1)); // false
+includes()方法第二个参数是下标，表示从某个下标位置开始检索。
+
+11、indexof方法可以在字符串和数组上使用。indexOf() 方法可返回某个指定的值在数组中首次出现的位置。（注意：和findIndex()方法区别在于，indexOf()方法是判断数组中是否存在某个值，而findIndex()方法是找到数组中符合某个条件的第一个元素的下标值，因此indexOf()方法的参数是需要检索的值，而findIndex()方法的参数是一个回调函数，回调函数中有判断条件。indexOf()方法和includes()方法的类似之处是所传参数都是需要检索的元素，只是indexOf()方法会返回下标，而includes()方法则直接返回true或者false）。
+
+例子：
+arr = ['mfg', '2017', '2016'];
+            //控制台输出0，查找到下标
+            console.log(arr.indexOf('mfg'));
+            //控制台输出-1，因为此方法不会在每一个元素的基础上再次执行 indexOf 匹配
+            console.log(arr.indexOf('m'));
+            //控制台输出1，查找到下标
+            console.log(arr.indexOf('2017'));
+            //控制台输出-1，这里不会做隐式类型转换
+            console.log(arr.indexOf(2017));
+
+12、join(),join() 方法用于把数组中的所有元素转换一个字符串。元素是通过指定的分隔符进行分隔的(注意：使用join()方法会先将数组降为一维，然后在将数组中的每个元素按照指定分隔符链接成字符串，如果用原生方法实现的话，可以先对数组进行flat(Infinity)操作，然后循环添加分隔符。)。
+
+例子:var arr=["faf","fdad",["fdas","fdsab"],[[[3231,3131,312]]]];
+console.log(arr.join('.')); //faf.fdad.fdas.fdsab.3231.3131.312
+
+13、keys() 方法用于从数组创建一个包含数组键的可迭代对象(可迭代对象和当时java中看到的一样，对象调用next()方法就会拿到对象中下一个值)。
+例子：var fruits = ["Banana", "Orange", "Apple", "Mango"];
+console.log(fruits.keys()); // Array Iterator {}
+
+<p>从数组中创建一个可迭代的对象，该对象包含数组的键。</p>
+
+<p id="demo1"></p>
+<p id="demo2"></p>
+<p id="demo3"></p>
+<p><strong>注意:</strong> IE11 及其更早的浏览器版本不支持 keys 方法。</p>
+
+<script>
+var fruits = ["Banana", "Orange", "Apple", "Mango"];
+var x = fruits.keys();
+
+document.getElementById("demo1").innerHTML = x.next().value;
+document.getElementById("demo2").innerHTML = x.next().value;
+document.getElementById("demo3").innerHTML = x.next().value;
+</script>
+
+（注意：在顶级父对象Object中也有一个keys()方法，该方法传入参数为对象时，则会返回对象所有的key放入数组中，Object.keys(obj),该方法传入字符串时，返回字符串的索引，传入数组时，返回数组所有下标。）
+
+13、lastIndexOf() 方法可返回一个指定的值最后出现的位置，可以从数组的尾部向前检索。
+例子：
+arr = ['mfg', '2017', '2016'];
+            //控制台输出0，查找到下标
+            console.log(arr.lastIndexOf('mfg'));
+            //控制台输出-1，因为此方法不会在每一个元素的基础上再次执行 indexOf 匹配
+            console.log(arr.lastIndexOf('m'));
+            //控制台输出1，查找到下标
+            console.log(arr.lastIndexOf('2017'));
+            //控制台输出-1，这里不会做隐式类型转换
+            console.log(arr.lastIndexOf(2017));
+
+14、map()函数，map()函数可以返回一个新数组，不会改变原数组。
+
+15、pop() 方法用于移除数组的最后一项，并返回最后一个元素的值。
+16、push() 方法可向数组的末尾添加一个或多个元素，并返回新的长度。
+17、shift() 方法用于把数组的第一个元素从其中删除，并返回第一个元素的值。
+18、unshift() 方法可向数组的开头添加一个或更多元素，并返回新的长度。
+
+19、reverse() 方法用于颠倒数组中元素的顺序。该方法会改变原来的数组，而不会创建新的数组。
+var arr = new Array(3)
+arr[0] = "George"
+arr[1] = "John"
+arr[2] = "Thomas"
+
+document.write(arr.reverse())
+George,John,Thomas
+Thomas,John,George
+
+20、some() 方法用于检测数组中的元素是否满足指定条件（函数提供），如果有一个元素满足条件，则表达式返回true , 剩余的元素不会再执行检测。如果没有满足条件的元素，则返回false。该方法不会改变原数组。该方法和every()方法是对立的，every()方法是所有元素都满足条件时才会返回true，而some()方法是只要有一个元素满足时就返回true。
+some()方法的参数  Array.some(fun,thisValue)，第一个参数是回调函数，回调函数中有三个参数，分别为value、index、arr，thisValue参数可以改变fun回调函数中的this指向，当不传参数时，fun回调函数的this指向window，some方法的this指向调用some方法的数组，当传入时，fun回调函数的this将指向传入的对象。
+例子：var ages = [4, 12, 16, 20];
+ages.some((value,index,arr)=>{
+	return value > 18;
+}); // true  数组中第四个元素满足条件，所以返回true
+
+21、sort() 方法用于对数组的元素进行排序。对数组的引用。请注意，数组在原数组上进行排序，不生成副本。
+
+22、splice() 方法可删除从 index 处开始的零个或多个元素，并且用参数列表中声明的一个或多个值来替换那些被删除的元素。arr.splice(index,deleteNum,item1,...itemX)，参数index为必需，为删除和添加的起始位置，deleteNum为必需，是需要删除的元素个数，当不需要删除时设置成0，item1...itemX为可选，是需要插入的元素。该方法会改变原数组，返回的是被删除的元素数组，如果删除个数为0，则返回空数组。
+例子：var arr = [12,23,43,54,65];
+console.log(arr.splice(2,0,11,11));
+//[]     arr // [12, 23, 11, 11, 43, 54, 65]
+
 四十三、数组的拷贝方法。
 数组的拷贝有深拷贝和浅拷贝的说法。
 1、如果数组是一维数组，且数组中的每个元素都不是引用类型，则可以使用slice(),和concat()方法进行拷贝。
