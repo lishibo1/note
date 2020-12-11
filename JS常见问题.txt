@@ -1145,7 +1145,94 @@ ages.some((value,index,arr)=>{
 console.log(arr.splice(2,0,11,11));
 //[]     arr // [12, 23, 11, 11, 43, 54, 65]
 
-四十三、数组的拷贝方法。
+四十三、字符串的方法
+1、charAt() 方法可返回指定位置的字符。
+例子：var str = "HELLO WORLD";
+var n = str.charAt(2)  // L
+
+2、charCodeAt() 方法可返回指定位置的字符的 Unicode 编码。
+例子：var str = "HELLO WORLD";
+var n = str.charCodeAt(0);  // 72
+
+3、concat() 方法用于连接两个或多个字符串。数组也有concat方法，用于连接多个数组。
+例子：var str1 = "Hello ";
+var str2 = "world!";
+var n = str1.concat(str2); // Hello world!
+
+(注意：由于concat即可以连接数组，又可以连接字符串，因此当str.concat(arr)时，arr中的内容会被转化为字符串，然后跟str连接在一起，当arr.concat(str)时，str将被当做一个元素，被添加到新数组中。)
+例子：var str1 = "Hello";
+var arr1 = [233,43,53];
+var arr2 = ["fa","tete"];
+console.log(str1.concat(arr1,arr2)); //Hello233,43,53fa,tete
+
+4、fromCharCode() 可接受一个指定的 Unicode 值，然后返回一个字符串。该方法是 String 的静态方法，因此只能使用String调用该方法。
+例子：var n = String.fromCharCode(65); // A
+
+5、indexOf() 方法可返回某个指定的字符串值在字符串中首次出现的位置。数组也有此方法，用来返回指定元素在数组中的位置。
+例子：var str="Hello world, welcome to the universe.";
+var n=str.indexOf("welcome"); // 13
+
+6、includes() 方法用于判断字符串是否包含指定的子字符串。
+例子：var str = "Hello world, welcome to the Runoob。";
+var n = str.includes("world"); // true
+
+7、match() 方法可在字符串内检索指定的值，或找到一个或多个正则表达式的匹配。match() 方法将检索字符串 stringObject，以找到一个或多个与 regexp 匹配的文本。这个方法的行为在很大程度上有赖于 regexp 是否具有标志 g。如果 regexp 没有标志 g，那么 match() 方法就只能在 stringObject 中执行一次匹配。如果没有找到任何匹配的文本， match() 将返回 null。否则，它将返回一个数组，其中存放了与它找到的匹配文本有关的信息。该数组的第 0 个元素存放的是匹配文本，而其余的元素存放的是与正则表达式的子表达式匹配的文本。
+例子：var str = "前端是一门职业，前端不如后端";
+console.log(str.match(/(前)(端)/)) //当正则中存在分组时，返回的数组中也会匹配到分组项
+// ["前端", "前", "端", index: 0, input: "前端是一门职业，前端不如后端", groups: undefined]
+如果匹配到有结果，那么数组的第一项就是匹配到的符合条件的子串，如果正则中存在分组，那个数组下标1出将存在正则中的第一个分组，下标2处存放第二个分组，依次类推。返回的数组中还有两个属性，分别为index和input,index属性是找到符合条件的下标，input属性指向传入的字符串对象，groups不知道是什么。
+
+当正则中有g存在时，就会全局搜索字符串，找到所有符合条件的子串，存入数组中。
+例子：var str = "前端是一门职业，前端不如后端";
+console.log(str.match(/前端/g))  // ["前端","前端"] 
+
+8、repeat() 方法字符串复制指定次数。repeat()方法中传入需要复制的次数，该方法不会改变原字符串，会生成新字符串。
+例子： var str = "name";
+console.log(str.repeat(2)) // namename
+
+9、replace() 方法用于在字符串中用一些字符替换另一些字符，或替换一个与正则表达式匹配的子串。
+例子：var str="Mr Blue has a blue house and a blue car";
+var n=str.replace(/blue/gi, "red");
+//Mr red has a red house and a red car
+
+10、search() 方法用于检索字符串中指定的子字符串，或检索与正则表达式相匹配的子字符串。如果没有找到任何匹配的子串，则返回 -1，找到则返回下标。和match对比，search是返回找到对应子串的下标，而match则返回数组，且能返回匹配到的项，match的正则中使用g不生效，只能找到第一个匹配的子串，match则可以匹配到所有的子串。
+例子：var str="Visit Runoob!"; 
+var n=str.search("Runoob");  // 6
+
+11、slice()即可以处理数组，也可以处理字符串，不会改变原数组。
+
+12、split()方法用来打散字符串，按照指定的字符将字符串打散成数组。
+例子：var str="How are you doing today?";
+var n=str.split();  // 省略分隔符，则将生成一个只有一个元素的数组
+//[How are you doing today?]
+
+var str="How are you doing today?";
+var n=str.split(""); //当双引号做参数时，会将所有字符打散。
+//[H,o,w, ,a,r,e, ,y,o,u, ,d,o,i,n,g, ,t,o,d,a,y,?]
+
+13、substr() 方法可在字符串中抽取从 开始 下标开始的指定数目的字符。和substring和slice方法不同的是，substr方法第二个参数是需要截取的个数。
+例子：var str="Hello world!";
+var n=str.substr(2,3) // llo
+
+14、substring() 方法用于提取字符串中介于两个指定下标之间的字符。和slice()方法一样，但是substring方法只能处理字符串，slice方法还能处理数组。
+
+15、toLowerCase() 方法用于把字符串转换为小写。
+例子：var str="Runoob";
+document.write(str.toLowerCase());  // runoob
+
+16、toUpperCase()方法用于把字符串转化为大写。
+例子：var str="Runoob";
+document.write(str.toUpperCase());  // RUNOOB
+
+17、trim()去除字符串首尾空格。
+var str = " faf sda    ";
+console.log(str.trim()) // faf sda
+
+18、
+
+
+
+四十四、数组的拷贝方法。
 数组的拷贝有深拷贝和浅拷贝的说法。
 1、如果数组是一维数组，且数组中的每个元素都不是引用类型，则可以使用slice(),和concat()方法进行拷贝。
 例1、var arr=["fdsa","fadsf","fdagrr",3213];
@@ -1203,7 +1290,7 @@ console.log(obj2);
 var arr=["fdsa","fadsf",{"name":"lishibo"},3213];
 var arr1 = [...arr];
 
-四十四、对象的拷贝方法。
+四十五、对象的拷贝方法。
 1、json方法
 适合情况：
  JSON对象的深度克隆。方法是先JSON.stringify() 转为json字符串， 再JSON.parse() 转为json数组
