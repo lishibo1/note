@@ -1195,7 +1195,7 @@ console.log(str.repeat(2)) // namename
 var n=str.replace(/blue/gi, "red");
 //Mr red has a red house and a red car
 
-10、search() 方法用于检索字符串中指定的子字符串，或检索与正则表达式相匹配的子字符串。如果没有找到任何匹配的子串，则返回 -1，找到则返回下标。和match对比，search是返回找到对应子串的下标，而match则返回数组，且能返回匹配到的项，match的正则中使用g不生效，只能找到第一个匹配的子串，match则可以匹配到所有的子串。
+10、search() 方法用于检索字符串中指定的子字符串，或检索与正则表达式相匹配的子字符串。如果没有找到任何匹配的子串，则返回 -1，找到则返回下标。和match对比，search是返回找到对应子串的下标，而match则返回数组，且能返回匹配到的项，search的正则中使用g不生效，只能找到第一个匹配的子串，match则可以匹配到所有的子串。
 例子：var str="Visit Runoob!"; 
 var n=str.search("Runoob");  // 6
 
