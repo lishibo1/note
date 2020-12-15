@@ -271,6 +271,17 @@ inheritPrototype(subType, superType)；
 抽象：如果一个类含有抽象方法，则称这个类为抽象类，抽象类必须在类前用abstract关键字修饰。因为抽象类中含有无具体实现的方法，所以不能用抽象类创建对象。
 抽象方法必须为public或者protected（因为如果为private，则不能被子类继承，子类便无法实现该方法），缺省情况下默认为public。
 
+（重载：在es5中是不存在重载的，当方法名相同时，下面定义的方法将会覆盖上面的方法。但是ts中存在方法的重载，和java中的重载有区别，java中的重载是参数类型个数不同的同名函数构成重载，但是ts中的重载只有方法定义，并没有方法体，ts中的重载如下。）
+
+function getInfo(name: string): string   
+function getInfo(age: number): number   // 两个重载的方法只有方法的定义，并没有实现的方法体。
+function getInfo(str: any):any{
+	if(typeof str === 'string'){
+		return str;  // 当str为string时则只能返回string类型的数据
+	} else {
+		return str;  // 当str不是string时则只能返回number类型的数据才不会报错。
+	}
+}
 
 九、介绍一下必包。
 	闭包就是能读取其它函数作用域中变量的函数。闭包的原理就是作用域问题，当你访问某个变量时，会先在当前作用域下查找，如果当前作用域不存在就会在外层作用域中寻找，直到找到window作用域，而外层作用域访问不到内层作用域中的变量。我们知道，一般的方法执行之后内部变量都会被释放，但是当你在这个方法中返回一个内部函数，这个内部函数就可以访问外部函数的所有变量，因此执行外部函数之后，函数内的内部变量不会被释放。
