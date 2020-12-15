@@ -708,6 +708,18 @@ let p = new Proxy(target, handler);  中有两个参数，第一个是传入的�
 	console.log(b.__proto__) // {rep: "apple"}
 	console.log(b.rep) // {rep: "apple"}
 
+	2、es6中的三点运算符的作用：
+		a、作为参数使用，可以将后面的参数放入数组中，之后可以循环数组来获取每一项。作为参数使用时，只能放在参数的最末尾。
+		     例子：let fun2=function(arr,...args){
+				    console.log(arr);
+				    console.log(args);
+				};
+				fun2(1,2,3);//1, [2,3]
+				fun2(1);//1, []当...args有其他参数时，rest参数args数组集合除去前面参数之后的参数。
+
+		b、作为拓展运算符使用，可以将数组和对象打散，因此可以用来数组和对象的合并。
+			例子：var arr = [321,53,76,];
+				 var arr1 = [3213,43,...arr,8787];
 三十二、原生js怎么绑定点击事件和解除绑定。
 
 	原生js绑定事件有两种方法，onclick和addEventListener，两者比较的差别：
