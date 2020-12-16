@@ -141,6 +141,29 @@ b、java中的多态和ts中多态存在一点点差异，java中多态没有要
 java多态其实就是子类重写父类的方法。多态有三个必要特点，1、必须有继承。2、必须有重写。3、父类引用指向子类对象(如：animal a = new Dog();)。
 
 
+8、ts中的接口。
+ts中接口也是用来定义规范的，ts中接口可以用来定义属性规范（属性规范一般用接口来定义json数据，常用于方法参数的规范定义）、方法规范等。
+如下属性规范接口；
+interface FullName{
+  firstName:string;
+  lastName:string;
+}
+
+class Person{
+  public class1: FullName = {'firstName':'lishibo','lastName': 'liuwenjing'}; // 此时class1变量中只能有两个属性，firstName、lastName，属性多了和少了都会发生编译报错，且属性值的类型要严格按照接口中的值类型。
+}
+如下方法传参属性规范接口；
+interface FullName{
+  firstName:string;
+  lastName:string; // 此处可以设置为可传参数lastName?:string;
+}
+
+function getInfo(obj:FullName){
+	console.log(obj);
+}
+
+调用方法时，所传参数必须是接口规范数据
+getInfo({'firstName':'lishibo','lastName': 'liuwenjing'})
 
 
 
