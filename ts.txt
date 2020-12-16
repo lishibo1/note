@@ -1,0 +1,147 @@
+1、ts简介：
+typescript是JavaScript的超集，涵盖了所有es5和es6语法。ts是强语言类型，存在class等概念，ts更加接近于后端语言。
+
+2、ts编译：
+ts语言并不能被浏览器识别，需要先将ts编译成es5才能被浏览器锁识别，在使用ts时，需要先安装ts环境，使用npm install -g typescript  全局安装ts环境，在ts文件下运行 tsc 文件名.ts,会将ts文件编译成js文件。
+
+3、ts中的数据类型：
+ts是强语言类型，当变量类型指定后，给变量赋值时不能赋其它类型的值。
+
+4、ts中的函数：
+在ts中定义函数时，函数的参数需要申明类型，函数如果有返回，则需要定义返回的类型，没有返回时，加上void。
+例子： function getInfo(id: number): string{ // 返回类型为string类型，参数只能传number类型。
+	return JSON.stringify(arr[id])
+      }
+平时使用ts语法开发时参数并没有指定类型，且没有规定返回值类型，是因为ts集成了es5，es5语法也可以使用。
+
+在ts的函数参数可以使用默认值，如：（默认参数是es6中的内容。）
+function getInfo(id: number = 12): string{ // 当调用函数不传参时，则默认使用12，传实参时，则使用传入的参数。
+	return JSON.stringify(arr[id])
+}
+
+在ts中的参数还存在剩余参数，如: （剩余参数也是es6中的语法。）
+function sum(num: number,...result: number): number{ // result数组中每个元素都是number类型。
+	var sum = num;
+	result.forEach((item)=>{sum+=item})
+	return sum
+}
+
+sum(1,2,3,4,5,6)  // 传入后，num = 1, result = [2,3,4,5,6],三点运算符在es6中有两个作用，作用一：在剩余参数中，三点运算符能将剩余的参数放入数组中，在函数中可以使用循环获取每一项。作用二：三点运算符可以做拓展运算符使用，可以将数组和对象打散，常用于数组和对象的合并。
+
+5、ts中方法的重载：
+在es5中不存在方法的重载，es5中存在同名函数时，后面定义的方法将会覆盖前面定义的方法。ts中的重载和java中重载存在区别，ts中的重载方法没有方法体，java中的重载有方法体。如下为ts中方法的重载：
+function getInfo(name: string): string
+function getInfo(age: number): number
+function getInfo(str: any): any{ // 由于存在重载，方法传参只能是string和number类型，当传入其它类型时，ts的编译就会直接报错。
+	if(typeof str === 'string'){ // 当传入的参数是字符串类型时，返回的类型只能是字符串类型，
+		return str
+	} else {
+		return str
+	}
+}
+
+6、ts中的类
+a、类的定义
+class Person{  // 注意：类中两个方法之间没有逗号
+	name: string;
+	constructor(name: string){  //构造方法必须有，用来初始化类中属性的值。
+		this.name = name
+	}
+	study(){
+		console.log(this.name+'在学习')
+	}
+
+}
+
+b、类的继承。ts中类的继承通过两个关键词实现，在子类定义时，使用extend继承，并在子类构造函数中使用super()函数调用父类构造函数，将需要的参数传入。
+class Person{  
+	name: string;
+	constructor(name: string){ 
+		this.name = name
+	}
+	study(){
+		console.log(this.name+'在学习')
+	}
+
+}
+
+calss Child extend Person{
+	age: number;
+	constructor(name: string, age: number){
+		super(name) // 此处super方法是调用父类构造器，继承时必须使用super
+		this.age = age;
+	}
+}
+
+c、ts中类的访问修饰符。
+在ts中访问修饰符只有三个，分别为public、protected、private，且跟java中的访问修饰符存在很大差别。
+在ts中不加访问修饰符时默认为public，在ts中访问修饰符的作用：
+public：使用public修饰的属性和方法在类外部、类里面、子类中都可以访问。
+protected: 使用protected修饰的属性和方法只能在类和子类中访问。
+private：使用private修饰的属性和方法只能在自身类中访问。
+
+在java中
+private：只有自己的类能访问，子类中也不能访问
+default：当不加修饰符时就是默认修饰符，只有同一个包中的类可以访问
+protected：可以被同一个包的类以及其他包的子类访问
+public：可以被该项目中所有类访问
+
+d、ts中的静态方法和静态属性。
+在类中使用static修饰的方法和属性是静态方法和静态属性。和java相同的是，静态方法可以使用静态属性，和java不同的是，ts中的非静态方法不能调用静态方法和使用静态属性，ts中实例化的对象也不能调用静态方法,也就是说，在ts中，静态方法和静态属性从属于类对象，在实例化类时，并没有将类对象中的静态方法和静态属性加入到实例化对象中。在java中，静态方法可以访问静态属性，但是不能访问成员变量和成员方法，java中的类成员方法可以访问类中的静态方法和静态属性，java中的类实例化对象也可以访问类中的静态属性和静态方法。也就是说，在java中，静态方法和静态属性从属于类对象，类在初始化时就已经存在，此时并不存在类实例化对象，所以静态方法没法访问成员变量，但是在生成类实例化对象时，会将类中的静态方法和静态属性加入到类实例化对象中，因此类实例化对象可以访问类中的静态属性和静态方法。
+
+class Person{  
+  	public static firstName: string = 'liuwenjing'; // 此为静态属性
+  	public firstName: string;
+	constructor(name: string){ 
+		this.firstName = name  //此处this.firstName为实例化对象中的firstName
+	}
+	study(){
+    		console.log(this.firstName+'在学习',this)
+    		console.log('----------')
+    		// console.log(this.getFirstName()); 无法调用类对象的getFirstName方法
+	}
+  	public static getFirstName(): string{
+    		console.log(this)
+    		return this.firstName; // 此处this指向Person对象，因为getFirstName是静态方法，只能被Person类调用
+  	}
+}
+
+
+7、ts中的多态。
+a、ts中的多态往往跟抽象类相结合（也不是一定要抽象类，非抽象类中的实现方法被多个子类重写也算是多态的表现形式。），ts中的抽象类也是用来定义一个规范，跟java中接口类似，ts中的抽象类中必须要有抽象方法，抽象方法只需要方法的定义，由子类去实现。ts中的多态就是父类定义一个规范，所有子类去实现，表现出不同的形态称之为多态。如下：
+abstract class Animal{ // 定义一个抽象类作为父类，使用abstract定义的类不能new。
+	public abstract eat(): any; // 定义一个规范，动物吃的方法，只有方法定义，不实现，继承的子类必须实现此方法
+}
+
+class Dog extend Animal{
+	public name: string;
+	constructor(name:string){
+		this.name = name;
+	}
+	public eat(): string{ // 实现eat方法
+		console.log(this.name+'吃粮食');
+	}
+}
+
+class Cat extend Animal{
+	public name: string;
+	constructor(name:string){
+		this.name = name;
+	}
+	public eat(): string{ // 实现eat方法
+		console.log(this.name+'吃粮食');
+	}
+}
+var dog = new Dog('狗')
+var cat = new Cat('猫')
+dog.eat();
+cat.eat();
+
+b、java中的多态和ts中多态存在一点点差异，java中多态没有要求父类为抽象类，且父类中的方法也没必要是抽象方法。java存在多态时，父类的引用必须指向子类的对象。
+java多态其实就是子类重写父类的方法。多态有三个必要特点，1、必须有继承。2、必须有重写。3、父类引用指向子类对象(如：animal a = new Dog();)。
+
+
+
+
+
+
