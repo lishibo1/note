@@ -186,3 +186,149 @@ filter函数和map函数差不多，都可以处理数组并返回结果。map�
     			console.log('counter.down change to %d from %d', newV, oldV);
   		},
 	}
+
+十九、vuex的使用方法
+1、vuex的作用：vuex是为了解决组件间传值而产生的，在vue的中大型项目中，如果存在过多组件间通信，那将会是一个繁琐的过程，因此可以使用vuex去集中管理需要通信的数据，在vuex的state中的数据时全局共享的，和angular中service的数据类似。
+2、vuex中的五大将分别是state公共数据，mutations用来修改state中数据的方法，actions是当修改state中数据存在异步操作时,需要在actions中定义方法进行修改，getters是用来处理state中的数据返回,modules是分模块管理共享数据。
+
+如存在如下vuex数据，在跟模块store和子模块bus中分别如下。
+store模块
+export default new Vuex.Store({
+	state: {'name': 'lishibo'},
+	mutations: {
+		setName(state,name){// 此处state是跟模块中的state对象，对象中存在子模块state的数据
+			state.name = name;
+		}
+	},
+	actions: {
+		setNameAsycn(context,name){ // 此处的context是跟模块Store对象，该对象中存在state、commit、dispatch、getter等对象
+			setTimout(()=>{
+				context.state.name = name  //此处可以直接修改state中的数据，或者调用mutations中的方法进行修改
+				context.commit('setName',name)
+			},1000)
+		}
+	},
+	getters: {
+		changeName(state){ // 此处state是跟模块中的state对象，对象中存在子模块state的数据
+			return state.name + 1;
+		}
+	},
+	modules:{
+		namespaced: true, //vuex中的store分模块管理，需要在store的index.js中引入各个模块，为了解决不同模块命名冲突的问题，将不同模块的namespaced:true，之后在不同页面中引入getter、actions、mutations时，需要加上所属的模块名
+		bus
+	}
+})
+
+bus模块：
+
+export default{
+	namespaced: true,
+	state: {'name':'liuwenjing','age':25},
+	mutations: {
+		setName(state,name){// 此处state是子模块bus中的state对象						state.name = name
+		}
+	},
+	actions: {
+		setNameAsycn(context,name){ // 此处context是子模块bus的Stroe对象，该对象中存在state、commit、dispatch、getter等对象
+			context.commit('setName',name)
+		}
+	},
+	getters: {
+		changeName(state){
+			return state.name + 1
+		}
+	}
+}
+
+3、state：state是需要共享的数据，在有modules存在的情况下，子模块的state数据也会被整合到跟模块的state中，但是会携带子模块的模块名。如上跟模块的state数据如下
+state = {'name':'lishibo',bus:{'name': 'liuwenjing', 'age':25}};
+
+在vue组件中使用state中数据的方法:
+在标签中使用<span>$store.state.name</span> //此处使用的是跟模块中state中的数据
+<span>$store.state.bus.name</span> //此处使用的是bus模块中state中的数据
+
+在js方法中使用数据：
+this.$store.state.name   //使用的是跟模块中state中的数据。
+this.$store.state.bus.name //此处使用的是bus模块中state中的数据
+
+使用mapState方法：
+现在需要使用的组件js中引入mapState方法
+import {mapState} from vuex;
+computed: {
+	...mapState(['name']) // 将跟组件中的state数据存入组件中。
+	...mapState('bus',['name','age']) // 将bus模块中的数据存入组件中，'bus'是模块名。	
+}
+
+后续在js中使用就可以直接this.age就可以获取到值了。
+
+
+4、mutations: mutations中存放的是修改state中数据的方法，在vuex中不能直接在组件内修改state中的数据，需要修改时应该在mutations中修改。当模块中不存在命名空间namespaced时，子模块中的mutations方法也会被整合到跟模块的mutations中，但一般情况下是不推荐使用的，一般都会将命名空间值设置成true。
+
+在js中使用mutations的方法：
+this.$store.commit('setName','lishiboSuper'); // 调用跟模块中mutations方法。
+this.$store.commit('bus/setName', 'liuwenjingSuper') // 调用的是bus模块中的方法。
+
+使用mapMutations方法:
+现在组件中引入
+import {mapMutations} from vuex;
+
+methods:{
+	...mapMutations(['setName']) // 将跟模块中的mutations方法引入组件中
+	...mapMutations('bus',['setName']) // 将bus模块中的mutations方法引入组件中
+}
+
+在js中使用方法可以直接this.setName('lishiboSuper')。
+
+5、actions:当需要修改state中的数据且有一步操作时，就需要在action中定义方法修改。
+
+在js中使用actions的方法：
+this.$store.dispatch('setNameAsycn','lishiboSuper'); // 调用跟模块中mutations方法。
+this.$store.dispatch('bus/setNameAsycn', 'liuwenjingSuper') // 调用的是bus模块中的方法。
+
+使用mapActions方法:
+现在组件中引入
+import {mapActions} from vuex;
+
+methods:{
+	...mapActions(['setNameAsycn']) // 将跟模块中的actions方法引入组件中
+	...mapActions('bus',['setNameAsycn']) // 将bus模块中的actions方法引入组件中
+}
+
+在js中使用方法可以直接this.setName('liuwengjingSuper')。
+
+
+6、getters：当需要对state中的数据做处理但不改变state中数据时，可以使用getters中的函数返回一个数据，getters中的函数相当于一个计算属性。如果存在子模块，子模块的getters数据也会被整合到跟模块中。如上面跟模块的getters数据如下：
+getters = {
+	'changeName' : 'lishibo1',
+	'bus/changeName' : 'liuwenjing1'
+}
+
+在js中使用
+this.$store.getters.changeName; // 获取跟模块中getters，此处不需要()调用，因为getters中方法相当于计算属性。
+this.$store.getters['bus/changeName']; // 获取bus模块中getters，此处不需要()调用，因为getters中方法相当于计算属性。
+
+使用mapGetters方法：
+先在组件中引入
+import {mapGetters} from vuex;
+
+computed:{
+	...mapGetters(['changeName']) // 将跟模块中的getters属性引入组件中
+	...mapGetters('bus',['changeName']) // 将bus模块中的getters属性引入组件中
+}
+
+
+总结：其实所有子模块的内容都会被整合到跟模块中，对于上面的跟模块对象，如下：
+
+Store = {
+	state : {'name':'lishibo','bus':{'name':'liuwenjing','age':25}},
+	commit: funciton, // 该方法可以传入 'setName' 和 'bus/setName'
+	dispatch: function, // 该方法可以传入 'setNameAsycn' 和 'bus/setNameAsycn'
+	getters: {'changeName':'lishibo1', 'bus/changeName': 'liuwenjing1'}
+}
+因此在js中直接使用时，都是型如： 'bus/....'
+在map函数中使用时，都是型如： 'bus', ['....']
+
+
+
+
+
