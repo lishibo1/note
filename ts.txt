@@ -309,9 +309,18 @@ class Animal{
 }
 
 
-c、方法装饰器
-function changeMethod(...args:any){
-  return function(target:any,methodName:any,parms:any){
+c、方法装饰器（方法装饰器可以改变原来方法的作用）
+function changeMethod(...args:any){ //此处为方法装饰器...args是将传入的参数加入到args数组中，是es6中的三点运算符参数中的使用
+  return function(target:any,methodName:any,parms:any){ // 此处三个参数为必须参数，target参数为Animal的原型对象，methodName为被装饰的方法的方法名，parms为一个对象，parms.value可以获取到getName()方法.
+	target.setName = function(){console.log('setName')}  // 此处为Animal原型对象上增添了一个setName方法。
+	var oMethed = parms.value  // 此处保存Animal中的getName方法
+
+	parms.value = function(...args:any){ //此处将parms.value重新指向一个方法，当Animal类的实例对象调用getName方法时，其实就是调用的parms.value指向的新方法。
+		args = args.map((value)=>{
+			return String(value)
+		}) //此处是将args中的所有元素转化为字符串
+		oMethed.apply(this,...args:any) //oMethed是原先的getName方法，此处的this指向parms，因此此处就是运行原来的getName方法。
+	}
 
   }
 }
