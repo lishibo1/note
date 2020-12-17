@@ -143,7 +143,7 @@ java多态其实就是子类重写父类的方法。多态有三个必要特点�
 
 8、ts中的接口。
 ts中接口也是用来定义规范的，ts中接口可以用来定义属性规范（属性规范一般用接口来定义json数据，常用于方法参数的规范定义）、方法规范等。
-如下属性规范接口；
+a、如下属性规范接口；
 interface FullName{
   firstName:string;
   lastName:string;
@@ -164,6 +164,151 @@ function getInfo(obj:FullName){
 
 调用方法时，所传参数必须是接口规范数据
 getInfo({'firstName':'lishibo','lastName': 'liuwenjing'})
+
+b、函数类型规范接口
+interface MyTypeFn { // 定义一个接口，用来规范函数
+  (x: number, y: number): number;
+}
+let add2:MyTypeFn;  // 定义一个变量，该变量是MyTupeFn类型。
+add2= function(x: number, y: number): number {
+  return x + y;
+};
+add2(1, 2);
+
+c、类接口：类接口可以被类实现
+interface Person{ // 类接口定义的是类的规范，当类去实现接口时，类中必须要有name属性和study方法，且name是string类型，study方法也要和接口中定义的类型一样。
+  name:string;
+  study(name:string):string;
+}
+
+class Study implements Person{
+  public name: string;
+  constructor(name:string){
+    this.name = name;
+  }
+  study(name:string):string{
+    return this.name+"在学习";
+  }
+}
+
+
+9、ts中的泛型：软件工程中，我们不仅要创造定义良好的API，同时也要考虑可重用行，组件不仅能够支持当前的数据类型，同时也能够支持未来数据类型。通俗理解：泛型就是解决类、接口、方法的复用性以及对不特定类型的数据的支持
+a、方法中添加泛型
+getDate<T>(value:T):T {
+　　return value;
+}
+
+b、类上添加泛型：
+class minclass<T> {
+　　list:T[] = [];
+　　add(value:T):void {
+　　　　this.list.push(value);
+　　}
+　　min():T {
+　　　　return this.list[0];
+　　}
+}
+
+var minMy = new minclass<number>();
+
+c、定义函数规范接口加上泛型：
+例子1：interface ConFn <T>{
+　　(value1:T,value2:T):T // 此处加上泛型，规范函数传参个数和返回值类型都一样
+}
+var myFn:ConFn = function<T>(value1:T,value2:T):T { // 此处是方法体的实现，也应该用泛型，在调用函数时传入的是想传入的类型。
+　　return value;
+}
+
+例子2：
+  interface Person<T>{// 定义一个泛型接口，当有类实现这个接口时，类也必须带有泛型T
+    name:T;
+    study(name:T):T;
+  }
+
+  class Study<Y,T> implements Person<T>{//当Study类实现Person接口时，Person接口的泛型不能丢了，且Study类必须带有泛型T，Study也可以有其它泛型，如Y
+    public name: T;
+    public eat: Y;
+    constructor(name:T,eat:Y){
+      this.eat = eat
+      this.name = name;
+    }
+    eatDo(eat:Y):Y{
+      return eat;
+    }
+    study(name:T):T{ // 此方法的泛型必须和继承接口泛型一致
+      return name;
+    }
+  }
+ 
+  class User{  // 定义一个User类
+    public name:string;
+    public age:number;
+  }
+
+  var user = new User();
+  user.name = "lishibo";
+  user.age=26;
+
+  var person = new Study<string,User>(user,'吃'); // 此处实例化对象时，将泛型T定义为User类型，当person对象调用study方法时，必须传入User类型对象，在实例化时加入固定类型泛型可以为后续调用做检测，假如new时不加入固定类型，那么后续调用study方法时可以随便传入类型。
+
+10、装饰器：所谓的装饰器作用是用来装饰的，如类装饰器来装饰类后，类就会有新装饰的功能。ts中装饰器有四种，分别问类装饰器、属性装饰器、方法装饰器、参数装饰器。（装饰器其实就是一个方法，不同类型的装饰器获取到的参数不同。）装饰器还分为普通装饰器和工厂装饰器，普通装饰器不能传参数，工厂装饰器可以传参数，一般都是使用工厂装饰器。
+
+a、ts中的类装饰器：
+function logClass1(params:any){ // 此处为普通类装饰器，参数params是Animal构造函数。可以在这里给Animal构造函数prototype上增加方法和属性。
+    console.log(params)
+}
+
+function logClass1(params:string){ // 此处为工厂类装饰器，参数params为调用装饰器传入的参数，target是Animal构造函数，和上面params一样。
+    return function(target:any){
+		console.log(params)
+		console.log(target)
+	}
+}
+
+@logClass1 @logClass2('hello')
+class Animal{
+  public name: string;
+  public age: number;
+  constructor(name:string,age:number){
+    this.name = name;
+    this.age = age;
+  }
+  public getName():string{
+    console.log(this.name);
+    return this.name;
+  }
+  public getAge():number{
+    console.log(this.age);
+    return this.age;
+  }
+}
+
+
+b、属性工厂装饰器
+function proto(params:string){ //此处定义一个工厂属性装饰器，params是调用函数时传入的参数。
+  return function(target:any,attr:any){//target为Animal构造函数原型对象，也就是Animal.prototype对象，attr为调用属性构造器时的属性，此处为Animal类中的name属性。
+    target[attr] = params;//此处将在Animal.prototype中增加一个name属性，值为params
+  }
+}
+
+class Animal{
+  @proto('lishibo')
+  public name: string | undefined;
+  public age: number;
+  constructor(age:number){
+    this.age = age;
+  }
+  public getName():void{
+    console.log(this.name);
+  }
+  public getAge():number{
+    console.log(this.age);
+    return this.age;
+  }
+}
+
+
+
 
 
 

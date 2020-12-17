@@ -731,6 +731,34 @@ let p = new Proxy(target, handler);  中有两个参数，第一个是传入的�
 		b、作为拓展运算符使用，可以将数组和对象打散，因此可以用来数组和对象的合并。
 			例子：var arr = [321,53,76,];
 				 var arr1 = [3213,43,...arr,8787];
+
+
+	3、es6新增export、import模块化
+	模块是独立的文件，该文件内部的所有的变量外部都无法获取。如果希望获取某个变量，必须通过export输出。
+	export的输出有三种类型（注意：当使用export输出时，不能直接输出变量，要么输出变量申请语句，要么输出大括号。）
+	a、export直接输出变量声明语句
+		如：export var a = 1;
+		   export function getName(){};
+	
+	b、export输出大括号
+		var b = 2;
+		function getAge(){}
+		export {b,getAge}
+	
+	c、export输出default。因为export default命令其中只是输出一个叫做default的变量，所以它后面不能跟变量声明语句。（注意：一个模块中只能有一个export default,且输出的是变量，不是变量的申请。）
+		如：
+		 var a = 1;
+  		 export default a ;
+
+	当使用import引入模块时。
+		如上a、b输出方式引入时需要加大括号
+		a、import {a,getName} from '....';
+		b、import {b,getAge} from '....';
+	
+		如上c方式导出时，在引入时不需要大括号，导入时名字可以随意取；
+		c、import aaa from '...';
+
+
 三十二、原生js怎么绑定点击事件和解除绑定。
 
 	原生js绑定事件有两种方法，onclick和addEventListener，两者比较的差别：
