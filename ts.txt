@@ -252,6 +252,7 @@ var myFn:ConFn = function<T>(value1:T,value2:T):T { // 此处是方法体的实�
   var person = new Study<string,User>(user,'吃'); // 此处实例化对象时，将泛型T定义为User类型，当person对象调用study方法时，必须传入User类型对象，在实例化时加入固定类型泛型可以为后续调用做检测，假如new时不加入固定类型，那么后续调用study方法时可以随便传入类型。
 
 10、装饰器：所谓的装饰器作用是用来装饰的，如类装饰器来装饰类后，类就会有新装饰的功能。ts中装饰器有四种，分别问类装饰器、属性装饰器、方法装饰器、参数装饰器。（装饰器其实就是一个方法，不同类型的装饰器获取到的参数不同。）装饰器还分为普通装饰器和工厂装饰器，普通装饰器不能传参数，工厂装饰器可以传参数，一般都是使用工厂装饰器。
+(注意：ts中的装饰器只能用于跟类，类的属性，类的函数，类函数的参数上，不能用于普通函数和普通属性上。)
 
 a、ts中的类装饰器：
 function logClass1(params:any){ // 此处为普通类装饰器，参数params是Animal构造函数。可以在这里给Animal构造函数prototype上增加方法和属性。
@@ -308,6 +309,28 @@ class Animal{
 }
 
 
+c、方法装饰器
+function changeMethod(...args:any){
+  return function(target:any,methodName:any,parms:any){
+
+  }
+}
+class Animal{
+  
+  public name: string | undefined;
+  public age: number;
+  constructor(age:number){
+    this.age = age;
+  }
+  @changeMethod(123,'haha')
+  public getName():void{
+    console.log(this.name);
+  }
+  public getAge():number{
+    console.log(this.age);
+    return this.age;
+  }
+}
 
 
 
