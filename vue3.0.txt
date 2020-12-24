@@ -204,7 +204,32 @@ function myRef(value) {
   });
 }
 
+9、vue3中的ref拿页面中的元素。
+<div ref="box">我是div</div>
+和vue2不同，vue2中获取html中ref属性的标签可以this.$refs.box，但是在vue3中不存在$refs这个属性，vue3中获取元素的方法应该如下：
 
+setup() {
+    //此处box对应html中的box
+    let box = ref(null); // reactive({value: null})
+
+    onMounted(()=>{
+      console.log('onMounted',box.value);// <div ref="box">我是div</div>
+    });
+
+    console.log(box.value); // null 因为此时box还不存在，setup函数执行时页面并没有渲染。
+
+    return {box};
+  }
+
+10、readonly、shallowReadonly、isreadonly方法以及readonly和const的区别。
+使用readonly创建的数据不能改变，readonly创建的数据是递归的，每一层都不能变，shallowReadonly只有第一层的数据不能变，isReadonly是判断数据是否是readonly类型。
+// readonly:用于创建一个只读的数据, 并且是递归只读
+let state1 = readonly({name:'lnj', attr:{age:18, height: 1.88}});
+// shallowReadonly: 用于创建一个只读的数据, 但是不是递归只读的
+let state2 = shallowReadonly({name:'lnj', attr:{age:18, height: 1.88}});
+// const和readonly区别:
+const: 赋值保护, 不能给变量重新赋值，变量中属性值可以改变。
+readonly: 属性保护, 不能给属性重新赋值。
 
 
 
