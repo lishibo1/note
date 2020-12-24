@@ -1,332 +1,211 @@
-Vue中的基本语法
-1、v-if="isTrue"
-2、v-for="(item,index) in items" :key=item.id
-3、:class="{'addColor':isTrue}"如果isTrue为true，则添加addColor的class。:class="computeClass",这里computeClass是个计算属性，返回一个对象，如computes:{computeClass(){return {"addColor":color,"addSize":size}}}
-4、:style="{display:changeDisplay}",此处也可以和:class一样使用computes属性
-5、事件用@加事件类型,如:@click="onClick"
-6、所有需要绑定动态值的属性都用:,如div元素的name需要动态变化,:name="changeName"
+1、vue3.0为什么比vue2.0快
+	a、优化了diff算法：
+	在vue2.0中虚拟dom是进行全量对比的，在vue3中增加了静态标记，在进行对比时只对比有静态标记的节点。vue2全量对比指的是vue会先生成一个虚拟dom树，当有内容变化时，会重新生成一个虚拟dom树，在更新时会每一层跟上一个虚拟dom树进行对比 。而vue3中生成虚拟dom树之后会进行静态标记，当有内容变化时，会重新生成一个虚拟dom树，更新对比时只比较静态标记的节点，所以减少了对比的次数，会比之前diff算法更高效。
+
+	静态标记如下：
+<div>
+    <p>知播渔</p>
+    <p>知播渔</p>
+    <p>知播渔</p>
+    <p>{{msg}}}</p>
+</div>
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createBlock("div", null, [
+    _createVNode("p", null, "知播渔"),
+    _createVNode("p", null, "知播渔"),
+    _createVNode("p", null, "知播渔"),
+    _createVNode("p", null, _toDisplayString(_ctx.msg) + "}", 1 /* TEXT */)
+  ]))
+}
+
+静态标记值存储在一个枚举类中，值分别代表的意思如下：
+附录: PatchFlags
+export const enum PatchFlags {
+  TEXT = 1,// 动态文本节点
+  CLASS = 1 << 1, // 2  // 动态 class
+  STYLE = 1 << 2, // 4 // 动态 style
+  PROPS = 1 << 3, // 8 // 动态属性，但不包含类名和样式
+  FULL_PROPS = 1 << 4, // 16 // 具有动态 key 属性，当 key 改变时，需要进行完整的 diff 比较。
+  HYDRATE_EVENTS = 1 << 5, // 32 // 带有监听事件的节点
+  STABLE_FRAGMENT = 1 << 6, // 64 // 一个不会改变子节点顺序的 fragment
+  KEYED_FRAGMENT = 1 << 7, // 128 // 带有 key 属性的 fragment 或部分子字节有 key
+  UNKEYED_FRAGMENT = 1 << 8, // 256 // 子节点没有 key 的 fragment
+  NEED_PATCH = 1 << 9, // 512 // 一个节点只会进行非 props 比较
+  DYNAMIC_SLOTS = 1 << 10, // 1024 // 动态 slot
+  HOISTED = -1, // 静态节点
+  // 指示在 diff 过程应该要退出优化模式
+  BAIL = -2
+}
 
 
-记录vue用法
-1、引入jquery：使用npm下载jquery，然后在build/webpack.base.conf.js中添加配置就可以全局使用了。
-2、swiper插件使用：使用npm下载swiper，然后在main.js中引入swiper和swiper的css就可以全局使用。如果只有个别组件使用swiper，那可以在组件中引入swiper和swiper的css。
-3、怎么注册全局组件：在main.js中引入需要全局使用的组件，假如注册的是header组件。运行vue.component("AppHeader",AppHeader)，就可以在其它组件内使用这些全局组件。
+
+	b、hoistStatic静态提升：
+	vue2中无论元素是否参与更新，每次都会重新创建，然后在渲染
+	vue3中对于不参与更新的元素，会做静态提升，只会被创建一次，在渲染时直接复用即可。
 
 
-一.vue双向数据绑定的原理(https://blog.csdn.net/longzhoufeng/article/details/80987527)
+<div>
+    <p>知播渔</p>
+    <p>知播渔</p>
+    <p>知播渔</p>
+    <p>{{msg}}}</p>
+</div>
+静态提升之前:每次都会调用createVNode函数去重新创建。
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createBlock("div", null, [
+    _createVNode("p", null, "知播渔"),
+    _createVNode("p", null, "知播渔"),
+    _createVNode("p", null, "知播渔"),
+    _createVNode("p", null, _toDisplayString(_ctx.msg) + "}", 1 /* TEXT */)
+  ]))
+}
+静态提升之后:
+const _hoisted_1 = /*#__PURE__*/_createVNode("p", null, "知播渔", -1 /* HOISTED */)
+const _hoisted_2 = /*#__PURE__*/_createVNode("p", null, "知播渔", -1 /* HOISTED */)
+const _hoisted_3 = /*#__PURE__*/_createVNode("p", null, "知播渔", -1 /* HOISTED */)
 
-	vue双向数据绑定指的是当model变化时，视图view随着更新，当视图view改变时，相应的model随着更新。vue实现数据双向绑定是采用数据劫持结合发布者-订阅者模式的方式。实现双向绑定需要完成三步，第一：实现一个数据监听器Observer 第二：实现一个模版解析器Compile 第三：实现一个Watcher，连接observer和compile。实现数据劫持是利用Object.defineProperty()方法，对data中对每个属性及其子属性设定一对get和set方法，设定get和set方法后，每当获取data中的某个数据时，就会触发相应的getter函数，当给data中某个数据赋值时，就会触发相应的setter方法。此时已经达到了监听data中数据的效果。
-连接视图和数据的中间桥梁需要实现一个Watcher。每当往视图上绑定一些东西的时候就会去实例化一个Watcher，实例化Watcher是会调用当前属性的get方法，
-在Observer中创建一个订阅器，作用是搜集订阅者Watcher。
-	实现Compile是对模版进行解析，遍历所有节点，用正则匹配{{}},解析出带有v-的指令，每碰到这些指令就实例化一个Watcher，在实例化watcher的时候会调用set方法，就可以往Observer的订阅器里面添加订阅者，在订阅者中有相应的更新视图的函数。当数据变化时在set方法里面通知订阅者调用更新函数就实现了视图更新。
-	当视图发生变化时更新数据，是在模版解析中完成的，当解析到v-model指令时，会给当前节点绑定监听事件，如input框绑定oninput事件，值发生变化就改变当前data中的属性值。
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createBlock("div", null, [
+    _hoisted_1,
+    _hoisted_2,
+    _hoisted_3,
+    _createVNode("p", null, _toDisplayString(_ctx.msg) + "}", 1 /* TEXT */)
+  ]))
+}
 
-监听到变化之后需要通知更新视图，实现一个watcher，连接model和view。（也就是通知修改view），此时可以设置一个订阅器，搜集所有的订阅者（也就是搜集页面中所有绑定了数据的节点）。订阅器就是创建一个构造函数，第一可以存储订阅者，第二可以通知订阅者。在循环data中属性时实例话订阅器，并在getter方法中添加订阅者，在setter方法中通知订阅者。订阅者就算实现了。
-	实现订阅者就是创建一个构造函数，传入vue的实例对象，data中的属性和当前节点。订阅者是在模版解释器中实例化的，模版解释器就是解析当前页面，在虚拟dom中将当前页面绑定有{{}}和v-model，v-show等节点找到，循环找到的当前节点，此时实例化订阅者的构造函数，往构造函数中传入this，当前节点绑定的data中的属性，当前节点。在订阅者的构造函数中调用了自身的get()方法，该方法返回初始化的值，并且在get()方法中获取了data中当前属性的值，也就是触发了data属性的getter()函数，此时往订阅器中增加了订阅者。此时设计已经完成，当data中属性值发生变化时，触发setter()函数，setter函数中执行了订阅器中一个方法来循环订阅者，如果新得到的数据和老数据发生变化，就会触发函数来更新视图。
+	c、cacheHandlers 事件侦听器缓存
+      默认情况下onClick会被视为动态绑定（也就是会添加静态标记）, 所以每次都会去追踪它的变化
+      但是因为是同一个函数，所以没有追踪变化, 直接缓存起来复用即可
 
-二.什么是虚拟DOM?
-	虚拟dom就是在内存中生成了一个js对象，这个对象保存了dom所有的节点、属性以及结构。原生js和jquery每次操作dom，都会经历dom树创建，创建Render树，绘制Painting等步骤。假如我一个方法里面更新了5个dom节点，原生js操作或者jquery操作会执行5遍dom操作(没次操作包括创建DOM树——创建StyleRules——创建Render树——布局Layout——绘制Painting)，而虚拟dom中就不一样了，当dom节点更新时，会操作一个js对象，将更新反应到对象中，然后对比找出不同之处一次映射到真实dom中。
+	事件侦听缓存代码如下：
+事件监听缓存
+<div>
+  <button @click="onClick">按钮</button>
+</div>
+
+开启事件监听缓存之前: 有静态标记8
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createBlock("div", null, [
+    _createVNode("button", { onClick: _ctx.onClick }, "按钮", 8 /* PROPS */, ["onClick"])
+  ]))
+}
+开启事件监听缓存之后: 没有静态标记。
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createBlock("div", null, [
+    _createVNode("button", {
+      onClick: _cache[1] || (_cache[1] = (...args) => (_ctx.onClick(...args)))
+    }, "按钮")
+  ]))
+}
+
+
+2.什么是Vite?
+- Vite是Vue作者开发的一款意图取代webpack的工具
+- 其实现原理是利用ES6的import会发送请求去加载文件的特性,
+  拦截这些请求, 做一些预编译, 省去webpack冗长的打包时间
+
+
+3、组合API。
+vue2存在问题，当围绕某个数据发生一系列操作时，这个响应式数据被定义在data中，处理data数据的逻辑可能存在于methods、computed、watch中，那么此时一个数据的处理代码被分到了多个位置去编写，这样不便于后期的维护，为了解决这个问题，vue3提供了组合API，vue3中提供了setup函数，为组合API的入口函数，如下：
+
+<script>
+  import {ref} from 'vue';
+export default {
+  name: 'App',
+  // setup函数是组合API的入口函数
+  setup(){
+    // 定义了一个名称叫做count变量, 这个变量的初始值是0
+    // 这个变量发生改变之后, Vue会自动更新UI
+    let count = ref(0);
+    // 在组合API中, 如果想定义方法, 不用定义到methods中, 直接定义即可
+    function myFn() {
+      // alert(123);
+      // console.log(count.value);
+      count.value += 1;
+    }
+    // 注意点:
+    // 在组合API中定义的变量/方法, 要想在外界使用, 必须通过return {xxx, xxx}暴露出去
+    return{count, myFn}
+  }
+}
+</script>
+
+
+4、ref和reactive函数（shallowRef、shallowReactive、triggerRef）。
+vue3中提供了ref和reactive函数，这两个方法都是用来实现响应式数据的,使用之前都需要引入。
+import {ref,reactive} from 'vue';
+当数据为简单类型数据时，使用ref函数处理为响应式数据：
+let count = ref(0); //ref函数在底层调用了reactive函数，相当于执行了count = reactive({value:0})，因此在js中要改变count的值时不能直接给count赋值，而是给count.value赋值。但是当渲染在页面上时，并不是{{count.value}}，是因为使用ref创建的数据会有一个私有属性__isRef = true属性，当渲染数据到页面上时，vue会检查这个属性，当检查到有这个属性，且值为true时，vue会自动加.value。__isRef是私有属性，那开发者怎么判断数据是ref类型还是reactive类型了，vue提供了isRef()和isReactive()来判断。
+在页面中使用时<p>{{count}}</p>
+
+当数据为复杂类型数据时，使用reactive函数处理为响应式数据：
+let user = reactive({"name":"lishibo","age":26});
+在页面中使用时<p>{{user.name}}</p>
+
+注意：ref和reactive数据绑定都是递归监听，也就是将每一层数据都绑定成了Proxy对象，因此当数据深度较深时，性能会受到影响，vue提供了shallowRef和shallowReactive方法，这两个方法都只监听第一层数据，也就是只将第一层数据绑定成Proxy对象，只有第一层数据发生变化时，才会触发更新UI，但是shallowRef比较特别， 只有value值变化才会触发，因为value才是第一层，因此使用shallowRef绑定的数据需要重新给value赋值才会更新UI。vue还提供了triggerRef()方法，当ref数据发生变化需要主动更新UI时，可以调用triggerRef()将ref数据传入，就会主动更新UI，vue并没有提供triggerReactive方法。
+
+在组合API入口函数setup中定义的变量如果需要在页面中使用，都要return出去，当定义的变量被return后，相当于数据被加入data中，定义的方法被return后，相当于加入了methods中。如上：return {count,user};
+
+
+5、setup函数执行的时间和注意点。
+	a、setup执行时间在beforeCreate之前，因为执行beforeCreate时data、methods还没有生成，所以在setup中不能使用data、methods中的方法。
+	b、setup中无法使用this，因此此时对象还没有创建出来，所以 Vue 为了避免我们错误的使用，直接将 setup函数中的this修改成了 undefined。
+	c、setup函数只能是同步的不能是异步的，意思不是不能写异步代码，而是setup函数不能定义为异步函数，如在setup函数前加async
+
+
+6、toRaw函数
+let obj = {name:'lnj', age:18};
+let state = reactive(obj);
+let obj2 = toRaw(state);
+console.log(obj === state); // false
+console.log(obj === obj2); // true
+此时state和obj的关系:引用关系, state的本质是一个Proxy对象, 在这个Proxy对象中引用了obj，也就是说，当我们直接修改obj.name = 'lishibo'时，state.name也是等于'lishibo'，但是此时并不会触发UI界面更新，因为obj并没有被追踪。toRaw方法可以得到ref和reactive的原始数据。如果想通过toRaw拿到ref类型的原始数据(创建时传入的那个数据)，那么就必须明确的告诉toRaw方法, 要获取的是.value的值，因为经过Vue处理之后, .value中保存的才是当初创建时传入的那个原始数据。
+let obj = {name:'lnj', age:18};
+let state = ref(obj);
+let obj2 = toRaw(state.value);
+console.log(obj === obj2); // true
+      ref/reactive数据类型的特点:
+      每次修改都会被追踪, 都会更新UI界面, 但是这样其实是非常消耗性能的
+      所以如果我们有一些操作不需要追踪, 不需要更新UI界面, 那么这个时候,
+      我们就可以通过toRaw方法拿到它的原始数据, 对原始数据进行修改
+      这样就不会被追踪, 这样就不会更新UI界面, 这样性能就好了
+
+7、markRaw函数
+将数据标记为永远不能追踪的数据，一般在编写自己的第三方库时使用
+let obj = {name: 'lnj', age: 18};
+obj = markRaw(obj);
+let state = reactive(obj);
+此时state将不会被追踪，改变state.name = 'lishibo'并不会触发更新UI
+
+8、如何自定义一个ref数据？customRef()
+ setup() {
+    let age = myRef(18);
+    function myFn() {
+      age.value += 1;
+    }
+    return {age, myFn}
+  }
+//自定义函数myRef
+function myRef(value) {
+//返回一个vue中自定义ref，注意，传入的value只能是值类型的，当传入的是引用类型时，会发生错误。
+  return customRef((track, trigger)=>{
+    return {
+      get(){
+        track(); // 告诉Vue这个数据是需要追踪变化的
+        console.log('get', value);
+        return value;
+      },
+      set(newValue){
+        console.log('set', newValue);
+        value = newValue;
+        trigger(); // 告诉Vue触发界面更新
+      }
+    }
+  });
+}
+
+
+
+
+
 	
-三. Vue脚手架常用的npm命令有哪些？
-	先下载安装node，安装node后就可以执行npm命令了。
-	$ npm install -g vue-cli				//1
-	$ vue init webpack vue-project		                //2
-	$ cd vue-project					//3
-	$ npm install						//4
-	$ npm run dev	
---------------------- 
-	1、本文使用vue-cli是通过npm来下载的，所以首先要有一个node的环境，在安装完node之后，npm就会自动安装在你的电脑中了，然后打开控制台，输入npm install -g vue-cli 全局安装vue-cli。
-	2、在安装完vue-cli之后，你就能够在控制台使用vue命令了，进入到想创建工程的文件夹中，输入vue init webpack-simple vue-project，会让你工程名称，描述，作者等信息，然后就会创建一个叫做vue-project的工程。
-此时你会得到一个如下的目录结构。
-
-
-	4、Package.json中有该工程所依赖的各种包，运行npm install，会自动安装这些包。
-	5、最后运行npm run dev，会在你本地localhost:8080启动一个服务，你能打开浏览器访问它。
-
-四、请说出vue-cli工程中每个文件夹和文件的用处
-五、config文件夹 下 index.js 的对于工程 开发环境 和 生产环境 的配置
-六、请你详细介绍一些 package.json 里面的配置
-七、对于vue渐进式的理解。
-
-	例如一个大型项目，已经完成得差不多了，但是某个模块你一个小功能，你可以用vue去完成，就像引入jquery一样。vue在此处只完成了相应模块的功能，不会影响到其它地方。整改一个大型项目，你可以一个一个模块的修改，不会影响到整个项目的运行。
-
-八、v-if和v-show的区别，分别在什么时候使用。
-
-	v-if是动态的向dom树内添加或者删除元素，而v-show只是将元素的样式display设置成显示或者隐藏。v-if的切换会改变dom树的结构，v-show不会。当需要频繁切换状态时用v-show，当只是在页面初次渲染，条件几乎不会变化时可使用v-if。
-
-九、vue常用的修饰符。
-
-	常用的有事件修饰符如：.stop(阻止事件冒泡) .prevent(取消默认行为)  .self(只有触发自身的事件才会触发,操作子元素不会触发自身事件) .once(事件只执行一次)
-	用法如：<button @click.stop="inner">点击我</button> 
-	常用的键盘修饰符如：.enter .up .left
-	用法如：<input @keyup.enter=“submit”>(当键盘按键在enter处起来时触发submit函数	)
-	常用修饰符如： .trim(去掉首位的空格)
-	<input v-model.trim=“msg”>
-
-十、v-on可以绑定多个函数吗？
-
-	v-on中可以绑定多个函数，绑定之后会按照绑定的顺序执行，但是需要注意的是，绑定之后必须加括号。如下：<div class="middle" @click="middle(),top()" style="width: 300px; height: 300px;background: pink;">
-不加括号无法运行。
-
-十一、v-for中key值的作用。
-	vue中使用v-for时推荐使用唯一key值来做标记是为了提高渲染速率，这跟vue中虚拟dom的diff算法有关，在虚拟dom中，diff算法会进行同一层次节点比较，而且会采用就地复用策略，如循环一个data数组渲染ul中的li，当在data数组头部插入一条数据时，此时会在内存中生成一对新旧虚拟的js dom对象，用新生成的js dom对象和旧js dom对象根据index对比，发现第一项目就不一样需要更新，而且后面所有的都不一样，都需要更新。当在循环时加上key值时，会采用就地复用策略，根据key保留原来存在的项，只更新新添加的项，提高渲染速率。
-
-十二、$nextTick的使用（https://www.jianshu.com/p/a7550c0e164f）
-
-$nextTick的两个应用场景：
-1、在created()钩子函数中操作dom。执行create()钩子函数时，dom元素还没渲染，因此在create()钩子函数中操作dom的js都要放在$nextTick()里面。
-2、在一个事件函数中，改变了某个元素的值，然后你想去操作这个元素获取它改变后的值，这种操作也要放在$nextTick()中。因为vue中执行dom更新都是异步的，当数据变化时，Vue将开启一个列队，缓冲同一事件中所有数据变化，等事件函数执行完后的某个事件点在去循环更新视图。
-
-
-	
-	vue中是异步执行DOM更新的，当数据变化时，Vue将开启一个列队，缓冲同一事件中所有数据变化，之后vue循环执行队列更新视图。
-	vue中如果从后台获取数据，赋值给一个变量，然后循环这个变量来渲染列表，假如此时你想操作dom，是获取不到dom的，因为vue中是异步执行dom更新的，当数据变化时，会开启一个列队，缓冲在同一事件中发生的所有数据改变，然后循环执行更新dom。
-
-十三、Vue 组件中 data 为什么必须是函数
-
-	当我们使用组件时，就是实例化了这个组件对象，如果组件中的data直接用对象，那么实例化组件后data将会指向内存中同一个地址。假如在同一个页面中有两个地方引用这个组件，那么改变一个组件内的data数据将会影响到另一个组件数据发生改变。如果data是一个函数返回一个对象，那每次使用组件时，运行data函数就会从新产生一个保存数据的对象。
-
-十四、v-for和v-if优先级，怎么使用。
-
-	v-for的优先级高于v-if,当在同一个标签上绑定v-for和v-if时，会先循环数组对象，然后判断v-if中的数据是否为true看是否显示该视图。这样会降低渲染效率，因为不管v-if中的值为true或false，都会进行一次循环。改进的方法是用计算属性来遍历需要循环的数组，当状态值为true时返回需要渲染的值。
-
-如 users = [{"name":"li","sex":1},{"name":"liu","sex":0},{"name":"yu","sex":1}];
-使用<li v-for="(user,index) in users" :key="index" v-if="user.sex"></li>会循环整个数组，然后判断v-if，这样会降低效率。
-改为：
-<li v-for="(user,index) in users" :key="index"></li>
-
-computed: {
-    Sex1: function(){
-		return this.users.filter((x)=>{
-			return x["sex"] == 1;
-		})
-	}
-}
-
-filter函数和map函数差不多，都可以处理数组并返回结果。map是返回处理后的结果，而filter是删选数组中的个别项。如上返回 Sex1 = [{"name":"li","sex":1},{"name":"yu","sex":1}]
-
-十五、vue生命周期有哪些钩子函数，分别有什么用？
-
-	vue生命周期指的是vue实例从创建到销毁的过程。在这个过程中要经历八个钩子函数，分别为，beforeCreate、created、beforeMount、mounted、beforeUpdate、updated、beforeDestroy、destroyed。
-	
-	beforeCreate在组件刚开始实例化时调用，此时组件的属性data、motheds等还没生成，$route已经存在，可以做路由重定向。
-	created在组件实例创建完成后运行，此时data、motheds等都已经生成，可以向后台发送请求获取数据，vue模板还没有进行编译，此时不能操作dom元素。
-	在created和boforeMount之间有一个模板编译的过程，将vue语法写的模版编译成html模版，模版编译完成后挂载开始之前调用boforeMount，此时$el属性已经存在，但值为undefined。
-	挂载完成后调用Mounted，此时已经完成页面的渲染，可以获取到dom元素。
-	beforeUpdate在监听到数据变化之后调用，在执行某些操作时，vue会将所有数据发生变化的属性存入一个队列中，此时还没有执行更新操作。
-	updated在虚拟dom将改动映射到真实dom上，dom已经完成更新之后调用。
-	beforeDestroy在实例销毁之前调用，此时实例上的属性都存在，都可以使用。
-	destoryed在实例销毁后调用，此时Vue实例所有东西都已经解绑
-
-十六、vue路由原理。
-	
-    Vue默认使用的路由机制是HTML5 History，HTML5 History中新增了pushState和replaceState方法，pushState方法可以向浏览器历史纪录栈顶增加一项历史纪录，这个方法可以改变url但不会发送url请求页面，（非单页面应用在url改变时会向服务端发送请求来加载当前页面）通过popstate监听浏览器URl的变化来更新视图。还有一种模式是hash模式，window.location中有一个hash属性，该属性的值是#本身以及它后面的字符，hash的改变也会在浏览器访问历史中增加记录，但hash的改变也不会向服务端发送请求，所以可以使用hashchange来监听hash的改变更新视图。我上个angular项目就是使用hash模式实现单页面应用的，angular8默认使用HTML5 History模式，但是当你进入到detail页面时，点击浏览器上的刷新按钮，就会向服务端发送请求，由于后端没有配置detail路由处理，就会报错404找不到当前资源。处理这个问题要么就是后端匹配不到就加载index.html，要么就是前端使用hash配置，当时解决这个问题就是我在app.module；里面配置了使用hash模式。
-	
-十七、vue父子组件传值。
-
-	父组件给子组件传值：父组件中<div><child :father="fat"></child></div>
-			子组件中接收传入的参数: props:["father"]
-
-			注意：当父组件给子组件传递的是一个引用类型的值时，在子组件中改变引用类型的属性并不会报错，且会改变父组件中对应的值，当父组件给子组件传递数据类型的值时，如果在子组件中改变这个值会报错。（此处就是子组件不能改变父组件传过来的值，属性改变并没有改变指向。）
-	
-	子组件给父组件传值：子组件中绑定一个点击事件，当事件触发时，向外emit一个事件，父组件接收运行一个方法。
-
-			子组件中：onclick(){this.$emit("parent","传上去","111")}
-			父组件中，<child @parent="getNum"></child>
-				getNum(data1,data2){console.log(data1,data2)}
-
-	特别注意，vue中自定义方法是不需要加()的，如@click="fun",当子组件给父组件传值是，父组件中方法也不需要传值，angular中需要传$event，但是当vue中调用自定义事件函数需要传值时，可以加()传值，如@click="fun('123')"
-
-十八、Vue中监听属性值发生变化
-
-	当监听的是单个属性时
-	data: function() {
-    		return {
-      			counter: 0,
-    		};
-  	}
-	watch: {
-    		counter: function(newV, oldV) {
-      			console.log('counter change to %d from %d', newV, oldV);
-    		},
-  	}
-	当监听的是一个object对象时，object中属性值发生变化时不会触发回调函数，因为object指向的地址没有发生变化，所以监听对象发生变化时有以下三种方法
-	data: function() {
-    		return {
-     			counter: {
-        			up: 0,
-        			down: 0,
-      			},
-    		};
-  	}
-方法1：给object重新赋值，可以直接监听object
-	watch: {
-    		counter: function(newV, oldV) {
-            		console.log('counter change to %o from %o', newV, oldV);
-    		},
-  	}
-方法2：使用deep参数
-	使用deep需要使用watch的完整形式：handler是监听回调函数，deep: true指定了不仅仅监听counter的变化，也监听其内部属性的变化，所以当counter.up或counter.down变化时才能出发handler回调。
-	watch: {
-  		counter: {
-    			handler: function(newV, oldV) {
-      				console.log('counter change to %o from %o', newV, oldV);
-    			},
-    			deep: true,
-  		}
-	}
-比较方法1和方法2的优缺点
-	使用deep参数会为数据每一层都添加监听，当层级较深时比较耗费性能，而且Vue不能监听到属性的添加或删除。所以一般来说使用重新赋值的方式是较优的方案，但如果只是想监听内部嵌套数据的话，重新赋值就比较重了，
-方法3：监听object对象中的某个属性
-	watch: {
-  		'counter.up': function(newV, oldV) {
-    			console.log('counter.up change to %d from %d', newV, oldV);
-  		},
-  		'counter.down': function(newV, oldV) {
-    			console.log('counter.down change to %d from %d', newV, oldV);
-  		},
-	}
-
-十九、vuex的使用方法
-1、vuex的作用：vuex是为了解决组件间传值而产生的，在vue的中大型项目中，如果存在过多组件间通信，那将会是一个繁琐的过程，因此可以使用vuex去集中管理需要通信的数据，在vuex的state中的数据时全局共享的，和angular中service的数据类似。
-2、vuex中的五大将分别是state公共数据，mutations用来修改state中数据的方法，actions是当修改state中数据存在异步操作时,需要在actions中定义方法进行修改，getters是用来处理state中的数据返回,modules是分模块管理共享数据。
-
-如存在如下vuex数据，在跟模块store和子模块bus中分别如下。
-store模块
-export default new Vuex.Store({
-	state: {'name': 'lishibo'},
-	mutations: {
-		setName(state,name){// 此处state是跟模块中的state对象，对象中存在子模块state的数据
-			state.name = name;
-		}
-	},
-	actions: {
-		setNameAsycn(context,name){ // 此处的context是跟模块Store对象，该对象中存在state、commit、dispatch、getter等对象
-			setTimout(()=>{
-				context.state.name = name  //此处可以直接修改state中的数据，或者调用mutations中的方法进行修改
-				context.commit('setName',name)
-			},1000)
-		}
-	},
-	getters: {
-		changeName(state){ // 此处state是跟模块中的state对象，对象中存在子模块state的数据
-			return state.name + 1;
-		}
-	},
-	modules:{
-		namespaced: true, //vuex中的store分模块管理，需要在store的index.js中引入各个模块，为了解决不同模块命名冲突的问题，将不同模块的namespaced:true，之后在不同页面中引入getter、actions、mutations时，需要加上所属的模块名
-		bus
-	}
-})
-
-bus模块：
-
-export default{
-	namespaced: true,
-	state: {'name':'liuwenjing','age':25},
-	mutations: {
-		setName(state,name){// 此处state是子模块bus中的state对象						state.name = name
-		}
-	},
-	actions: {
-		setNameAsycn(context,name){ // 此处context是子模块bus的Stroe对象，该对象中存在state、commit、dispatch、getter等对象
-			context.commit('setName',name)
-		}
-	},
-	getters: {
-		changeName(state){
-			return state.name + 1
-		}
-	}
-}
-
-3、state：state是需要共享的数据，在有modules存在的情况下，子模块的state数据也会被整合到跟模块的state中，但是会携带子模块的模块名。如上跟模块的state数据如下
-state = {'name':'lishibo',bus:{'name': 'liuwenjing', 'age':25}};
-
-在vue组件中使用state中数据的方法:
-在标签中使用<span>$store.state.name</span> //此处使用的是跟模块中state中的数据
-<span>$store.state.bus.name</span> //此处使用的是bus模块中state中的数据
-
-在js方法中使用数据：
-this.$store.state.name   //使用的是跟模块中state中的数据。
-this.$store.state.bus.name //此处使用的是bus模块中state中的数据
-
-使用mapState方法：
-现在需要使用的组件js中引入mapState方法
-import {mapState} from vuex;
-computed: {
-	...mapState(['name']) // 将跟组件中的state数据存入组件中。
-	...mapState('bus',['name','age']) // 将bus模块中的数据存入组件中，'bus'是模块名。	
-}
-
-后续在js中使用就可以直接this.age就可以获取到值了。
-
-
-4、mutations: mutations中存放的是修改state中数据的方法，在vuex中不能直接在组件内修改state中的数据，需要修改时应该在mutations中修改。当模块中不存在命名空间namespaced时，子模块中的mutations方法也会被整合到跟模块的mutations中，但一般情况下是不推荐使用的，一般都会将命名空间值设置成true。
-
-在js中使用mutations的方法：
-this.$store.commit('setName','lishiboSuper'); // 调用跟模块中mutations方法。
-this.$store.commit('bus/setName', 'liuwenjingSuper') // 调用的是bus模块中的方法。
-
-使用mapMutations方法:
-现在组件中引入
-import {mapMutations} from vuex;
-
-methods:{
-	...mapMutations(['setName']) // 将跟模块中的mutations方法引入组件中
-	...mapMutations('bus',['setName']) // 将bus模块中的mutations方法引入组件中
-}
-
-在js中使用方法可以直接this.setName('lishiboSuper')。
-
-5、actions:当需要修改state中的数据且有一步操作时，就需要在action中定义方法修改。
-
-在js中使用actions的方法：
-this.$store.dispatch('setNameAsycn','lishiboSuper'); // 调用跟模块中mutations方法。
-this.$store.dispatch('bus/setNameAsycn', 'liuwenjingSuper') // 调用的是bus模块中的方法。
-
-使用mapActions方法:
-现在组件中引入
-import {mapActions} from vuex;
-
-methods:{
-	...mapActions(['setNameAsycn']) // 将跟模块中的actions方法引入组件中
-	...mapActions('bus',['setNameAsycn']) // 将bus模块中的actions方法引入组件中
-}
-
-在js中使用方法可以直接this.setName('liuwengjingSuper')。
-
-
-6、getters：当需要对state中的数据做处理但不改变state中数据时，可以使用getters中的函数返回一个数据，getters中的函数相当于一个计算属性。如果存在子模块，子模块的getters数据也会被整合到跟模块中。如上面跟模块的getters数据如下：
-getters = {
-	'changeName' : 'lishibo1',
-	'bus/changeName' : 'liuwenjing1'
-}
-
-在js中使用
-this.$store.getters.changeName; // 获取跟模块中getters，此处不需要()调用，因为getters中方法相当于计算属性。
-this.$store.getters['bus/changeName']; // 获取bus模块中getters，此处不需要()调用，因为getters中方法相当于计算属性。
-
-使用mapGetters方法：
-先在组件中引入
-import {mapGetters} from vuex;
-
-computed:{
-	...mapGetters(['changeName']) // 将跟模块中的getters属性引入组件中
-	...mapGetters('bus',['changeName']) // 将bus模块中的getters属性引入组件中
-}
-
-
-总结：其实所有子模块的内容都会被整合到跟模块中，对于上面的跟模块对象，如下：
-
-Store = {
-	state : {'name':'lishibo','bus':{'name':'liuwenjing','age':25}},
-	commit: funciton, // 该方法可以传入 'setName' 和 'bus/setName'
-	dispatch: function, // 该方法可以传入 'setNameAsycn' 和 'bus/setNameAsycn'
-	getters: {'changeName':'lishibo1', 'bus/changeName': 'liuwenjing1'}
-}
-因此在js中直接使用时，都是型如： 'bus/....'
-在map函数中使用时，都是型如： 'bus', ['....']
-
-
-

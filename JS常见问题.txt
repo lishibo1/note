@@ -757,6 +757,15 @@ let p = new Proxy(target, handler);  中有两个参数，第一个是传入的�
 	
 		如上c方式导出时，在引入时不需要大括号，导入时名字可以随意取；
 		c、import aaa from '...';
+	
+	4、es6中对象中定义方法。
+	es6中对象定义方法有两种写法：
+	第一种：var obj = {
+			getName: function(){console.log(1111)}
+	      }
+	第二种：var obj = {//这种方法和TS中的class中方法定义一样
+			getName(){console.log(22222)}
+		}
 
 
 三十二、原生js怎么绑定点击事件和解除绑定。
