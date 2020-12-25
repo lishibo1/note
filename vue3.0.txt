@@ -232,5 +232,41 @@ const: 赋值保护, 不能给变量重新赋值，变量中属性值可以改�
 readonly: 属性保护, 不能给属性重新赋值。
 
 
+11、vue3.0响应式数据的本质。
+vue3.0响应式数据和vue2.0不同，vue2.0实现响应式数据采用的Object.defineProperty，vue3.0使用的是Proxy包装对象实现对对象的监听。
+
+let obj = {name:'lnj', age:18, family: {
+	father: {name:'lnjf',age:48},
+	girlfrient: {name:'lwj', age: 18}
+}};
+let state = new Proxy(obj, {
+    get(obj, key){
+        console.log(obj, key);
+        return obj[key];
+    },
+    set(obj, key, value){
+        console.log(obj, key, value);
+        obj[key] = value;
+        console.log('更新UI界面');
+	return true  //必须有return true，没有此处代码时，当用户修改值时，系统并不知道已经修改完毕，所以有可能报错，此处都应该加上return语句。
+    }
+});
+
+Proxy()接收两个参数，一个是要监听的对象，另一个参数是一个对象{}，对象中有get、set方法，当获取包装对象的值时会触发get方法，当修改包装对象的值时会触发set方法，分析如上代码：
+state.name = 'lishibo'会触发set方法，
+console.log(obj, key, value); // obj 'name' 'lishibo'
+state.family.girlfrient.name = 'kesaili'
+此时并不会触发set方法，使用Proxy包装对象时，只监听第一层属性的变化，但是state的值将会被改变，obj也会改变，因为Proxy包装的对象中存储了obj的地址，当访问Proxy包装对象的属性时，其实就是访问obj的属性。
+
+
+
+
+
+
+
+
+
+
+
 
 	
